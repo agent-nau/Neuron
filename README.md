@@ -32,7 +32,7 @@ Install and run:
 
 ```bash
 npm install
-# set BOT_TOKEN in .env or your host's env
+# set DISCORD_BOT_TOKEN in .env or your host's env
 node index.js
 ```
 
@@ -45,8 +45,8 @@ If you're hosting on a process manager or platform (PM2, Docker, Replit), keep `
 Create a `.env` file at the project root with at least:
 
 ```
-BOT_TOKEN=your_bot_token_here
-PREFIX=!
+DISCORD_BOT_TOKEN=your_bot_token_here
+SESSION_SECRET=session_secret
 ```
 
 Optional variables may include `CLIENT_ID`, `GUILD_ID`, or hosting-specific keys.
@@ -77,7 +77,7 @@ Please follow existing code style and keep changes focused.
 
 ## 📄 License
 
-This project is licensed under the Apache License 2.0 — see [LICENSE](LICENSE) for details.
+This project is licensed under the Apache License 2.0 — see [LICENSE](https://github.com/agent-nau/Neuron?tab=Apache-2.0-1-ov-file) for details.
 
 ---
 
@@ -96,6 +96,4 @@ Made with ❤️ for Discord communities.
 
 If you'd like to support development, you can buy me a coffee using the widget below:
 
-<script type='text/javascript' src='https://storage.ko-fi.com/cdn/widget/Widget_2.js'></script>
-<script type='text/javascript'>kofiwidget2.init('Support me on Ko-fi', '#72a4f2', 'S6S21RUCJR');kofiwidget2.draw();</script>
-
+<a href='https://ko-fi.com/S6S21RUCJR' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi3.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
