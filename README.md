@@ -94,6 +94,6 @@ Made with ❤️ for Discord communities.
 
 ## ☕ Support
 
-If you'd like to support development, you can buy me a coffee using the widget below:
+If you'd like to support development, you can buy me a coffee below:
 
 <a href='https://ko-fi.com/S6S21RUCJR' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi3.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
