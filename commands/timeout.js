@@ -1,59 +1,62 @@
-import { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+import { SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
 
-module.exports = {
-    data: new SlashCommandBuilder()
-        .setName('timeout')
-        .setDescription('Timeout a member for a specific duration.')
-        .addUserOption(option =>
-            option.setName('user')
-                .setDescription('The user to timeout')
-                .setRequired(true))
-        .addStringOption(option =>
-            option.setName('duration')
-                .setDescription('Duration (e.g., 10m, 1h, 1d)')
-                .setRequired(true))
-        .addStringOption(option =>
-            option.setName('reason')
-                .setDescription('Reason for timeout')
-                .setRequired(false))
-        .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
+export const category = "Moderation";
 
-    async execute(interaction) {
-        const user = interaction.options.getUser('user');
-        const member = await interaction.guild.members.fetch(user.id);
-        const duration = interaction.options.getString('duration');
-        const reason = interaction.options.getString('reason') || 'No reason provided';
+export const data = new SlashCommandBuilder()
+  .setName("timeout")
+  .setDescription("Timeout a member for a specific duration.")
+  .addUserOption(option =>
+    option.setName("user")
+      .setDescription("The user to timeout")
+      .setRequired(true)
+  )
+  .addStringOption(option =>
+    option.setName("duration")
+      .setDescription("Duration (10m, 1h, 1d)")
+      .setRequired(true)
+  )
+  .addStringOption(option =>
+    option.setName("reason")
+      .setDescription("Reason for timeout")
+      .setRequired(false)
+  )
+  .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers);
 
-        const timeRegex = /^(\d+)(s|m|h|d)$/;
-        const match = duration.match(timeRegex);
+export async function execute(interaction) {
+  const user = interaction.options.getUser("user");
+  const member = await interaction.guild.members.fetch(user.id);
+  const duration = interaction.options.getString("duration");
+  const reason = interaction.options.getString("reason") || "No reason provided";
 
-        if (!match) {
-            return interaction.reply({
-                content: 'Invalid duration format. Use: 10m, 1h, 1d',
-                ephemeral: true
-            });
-        }
+  const timeRegex = /^(\d+)(s|m|h|d)$/;
+  const match = duration.match(timeRegex);
 
-        const amount = parseInt(match[1]);
-        const unit = match[2];
+  if (!match) {
+    return interaction.reply({
+      content: "Invalid duration format. Use: 10m, 1h, 1d",
+      ephemeral: true
+    });
+  }
 
-        let ms = 0;
-        switch (unit) {
-            case 's': ms = amount * 1000; break;
-            case 'm': ms = amount * 60 * 1000; break;
-            case 'h': ms = amount * 60 * 60 * 1000; break;
-            case 'd': ms = amount * 24 * 60 * 60 * 1000; break;
-        }
+  const amount = parseInt(match[1]);
+  const unit = match[2];
 
-        try {
-            await member.timeout(ms, reason);
-            interaction.reply(`⏳ **${user.tag}** has been timed out for **${duration}**.\nReason: ${reason}`);
-        } catch (err) {
-            console.error(err);
-            interaction.reply({
-                content: 'Failed to timeout the user.',
-                ephemeral: true
-            });
-        }
-    }
-};
+  let ms = 0;
+  switch (unit) {
+    case "s": ms = amount * 1000; break;
+    case "m": ms = amount * 60 * 1000; break;
+    case "h": ms = amount * 60 * 60 * 1000; break;
+    case "d": ms = amount * 24 * 60 * 60 * 1000; break;
+  }
+
+  try {
+    await member.timeout(ms, reason);
+    interaction.reply(`⏳ **${user.tag}** has been timed out for **${duration}**.\nReason: ${reason}`);
+  } catch (err) {
+    console.error(err);
+    interaction.reply({
+      content: "Failed to timeout the user.",
+      ephemeral: true
+    });
+  }
+}
