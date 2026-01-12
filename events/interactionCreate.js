@@ -1,4 +1,12 @@
-import { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from "discord.js";
+import {
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  EmbedBuilder,
+} from "discord.js";
 
 export const name = "interactionCreate";
 
@@ -10,6 +18,32 @@ export async function execute(i, { warnings, verifSettings, verifCodes, joinSett
       if (!command) return;
 
       await command.execute(i, { warnings, verifSettings, verifCodes, joinSettings });
+    }
+
+    // Handle select menu interactions (help dropdown)
+    if (i.isStringSelectMenu()) {
+      if (i.customId === "help-menu") {
+        const selected = i.values[0];
+        const command = client.commands.get(selected);
+
+        if (!command) {
+          return await i.update({
+            content: "❌ Command not found.",
+            components: [],
+            ephemeral: true,
+          });
+        }
+
+        const embed = new EmbedBuilder()
+          .setTitle(`📘 /${command.data.name}`)
+          .setDescription(command.data.description)
+          .setColor(0x00bfff);
+
+        return await i.update({
+          embeds: [embed],
+          components: [],
+        });
+      }
     }
 
     // Handle button interactions for starting verification + opening modal
@@ -38,7 +72,10 @@ Click "Enter Code" to submit the code. The code expires in 5 minutes.`)
           .setColor("#ffd700");
 
         const openModalButton = new ActionRowBuilder().addComponents(
-          new ButtonBuilder().setCustomId(`verif_modal_open_${i.user.id}`).setLabel("Enter Code").setStyle(ButtonStyle.Success)
+          new ButtonBuilder()
+            .setCustomId(`verif_modal_open_${i.user.id}`)
+            .setLabel("Enter Code")
+            .setStyle(ButtonStyle.Success)
         );
 
         return await i.reply({ embeds: [embed], components: [openModalButton], ephemeral: true });
@@ -109,7 +146,7 @@ Click "Enter Code" to submit the code. The code expires in 5 minutes.`)
           try {
             await member.roles.remove(settings.unverifiedRoleId);
           } catch {
-            // remove may fail if user doesn't have role or bot lacks perms - ignore
+            // ignore if remove fails
           }
           verifCodes.delete(i.user.id);
 
