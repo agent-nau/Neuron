@@ -2,38 +2,48 @@ import {
   SlashCommandBuilder,
   EmbedBuilder,
   ActionRowBuilder,
-  StringSelectMenuBuilder,
-  StringSelectMenuOptionBuilder,
+  ButtonBuilder,
+  ButtonStyle,
 } from "discord.js";
 
 export const category = "Utility";
 
 export const data = new SlashCommandBuilder()
   .setName("help")
-  .setDescription("Show all commands in a clickable dropdown menu");
+  .setDescription("Show all commands with pagination");
 
 export async function execute(interaction) {
-  const commands = interaction.client.commands;
+  const commands = [...interaction.client.commands.values()];
+  const pageSize = 5;
+  const page = 0;
 
-  // Build dropdown menu options dynamically
-  const options = [...commands.values()].map(cmd =>
-    new StringSelectMenuOptionBuilder()
-      .setLabel(`/${cmd.data.name}`)
-      .setDescription(cmd.data.description)
-      .setValue(cmd.data.name)
-  );
-
-  const menu = new StringSelectMenuBuilder()
-    .setCustomId("help-menu")
-    .setPlaceholder("Select a command to view details")
-    .addOptions(options);
-
-  const row = new ActionRowBuilder().addComponents(menu);
+  const totalPages = Math.ceil(commands.length / pageSize);
+  const pageCommands = commands.slice(page * pageSize, (page + 1) * pageSize);
 
   const embed = new EmbedBuilder()
-    .setTitle("📖 Help Menu")
-    .setDescription("Choose a command from the dropdown to learn more.")
+    .setTitle("📘 Help Menu")
+    .setDescription("Below is a list of available commands:")
     .setColor(0x00bfff);
+
+  for (const cmd of pageCommands) {
+    embed.addFields({
+      name: `/${cmd.data.name}`,
+      value: cmd.data.description || "No description",
+    });
+  }
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`help_prev_${interaction.user.id}_${page}`)
+      .setLabel("◀ Previous")
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(true),
+    new ButtonBuilder()
+      .setCustomId(`help_next_${interaction.user.id}_${page}`)
+      .setLabel("Next ▶")
+      .setStyle(ButtonStyle.Primary)
+      .setDisabled(totalPages <= 1)
+  );
 
   await interaction.reply({
     embeds: [embed],
