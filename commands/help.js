@@ -1,36 +1,42 @@
-import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
+import {
+  SlashCommandBuilder,
+  ActionRowBuilder,
+  StringSelectMenuBuilder,
+  StringSelectMenuOptionBuilder,
+  EmbedBuilder,
+} from "discord.js";
 
 export const category = "Utility";
+
 export const data = new SlashCommandBuilder()
   .setName("help")
-  .setDescription("Command list");
+  .setDescription("Show all commands in a clickable menu");
 
-export async function execute(i) {
-  const commands = i.client.commands;
-  const categories = {};
+export async function execute(interaction) {
+  const commands = interaction.client.commands;
 
-  for (const command of commands.values()) {
-    if (!categories[command.category]) {
-      categories[command.category] = [];
-    }
-    categories[command.category].push(`\`/${command.data.name}\` — ${command.data.description}`);
-  }
+  const menu = new StringSelectMenuBuilder()
+    .setCustomId("help-menu")
+    .setPlaceholder("Select a command to view details")
+    .addOptions(
+      [...commands.values()].map(cmd =>
+        new StringSelectMenuOptionBuilder()
+          .setLabel(`/${cmd.data.name}`)
+          .setDescription(cmd.data.description)
+          .setValue(cmd.data.name)
+      )
+    );
+
+  const row = new ActionRowBuilder().addComponents(menu);
 
   const embed = new EmbedBuilder()
-    .setTitle("📖 Bot Commands")
-    .setDescription("Here’s a list of available commands grouped by category:")
-    .setColor("#00bfff")
-    .setFooter({ text: "Use / followed by the command name to activate." });
+    .setTitle("📖 Help Menu")
+    .setDescription("Choose a command from the dropdown to learn more.")
+    .setColor(0x00bfff);
 
-  for (const categoryName in categories) {
-    embed.addFields({
-      name: categoryName,
-      value: categories[categoryName].join("\n"),
-    });
-  }
-
-  await i.reply({
+  await interaction.reply({
     embeds: [embed],
+    components: [row],
     ephemeral: true,
   });
 }
