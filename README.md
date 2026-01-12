@@ -6,7 +6,6 @@
 ![Discord](https://img.shields.io/badge/Discord-Bot-7289DA?logo=discord&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node-16%2B-green?logo=nodedotjs&logoColor=white)
 ![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)
-![Repo Size](https://img.shields.io/github/repo-size/agent-nau/Neuron)
 
 A fast, modular Discord bot focused on moderation, verification, and ticketing — built with extensibility in mind.
 
