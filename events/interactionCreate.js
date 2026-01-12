@@ -19,9 +19,13 @@ export async function execute(i, { warnings, verifSettings, verifCodes, joinSett
       await command.execute(i, { warnings, verifSettings, verifCodes, joinSettings });
     }
 
-    // Help menu pagination buttons
+    // 📖 Help menu pagination buttons
     if (i.isButton() && i.customId.startsWith("help_")) {
-      const [, direction, userId, rawPage] = i.customId.split("_");
+      const parts = i.customId.split("_");
+      const direction = parts[1];   // "next" or "prev"
+      const userId = parts[2];      // user ID
+      const rawPage = parts[3];     // current page number
+
       if (i.user.id !== userId) {
         return await i.reply({ content: "❌ You can't control someone else's help menu.", ephemeral: true });
       }
@@ -30,12 +34,13 @@ export async function execute(i, { warnings, verifSettings, verifCodes, joinSett
       const commands = [...client.commands.values()];
       const pageSize = 5;
       const totalPages = Math.ceil(commands.length / pageSize);
+
       const newPage = direction === "next" ? page + 1 : page - 1;
       const pageCommands = commands.slice(newPage * pageSize, (newPage + 1) * pageSize);
 
       const embed = new EmbedBuilder()
         .setTitle("📘 Help Menu")
-        .setDescription("Below is a list of available commands:")
+        .setDescription(`Page ${newPage + 1} of ${totalPages}`)
         .setColor(0x00bfff);
 
       for (const cmd of pageCommands) {
@@ -61,7 +66,7 @@ export async function execute(i, { warnings, verifSettings, verifCodes, joinSett
       return await i.update({ embeds: [embed], components: [row] });
     }
 
-    // Verification: start button
+    // 🧩 Verification: start button
     if (i.isButton() && i.customId.startsWith("verif_start_")) {
       const parts = i.customId.split("_");
       const guildId = parts.slice(2).join("_") || i.guildId;
@@ -89,7 +94,7 @@ export async function execute(i, { warnings, verifSettings, verifCodes, joinSett
       return await i.reply({ embeds: [embed], components: [openModalButton], ephemeral: true });
     }
 
-    // Verification: open modal
+    // 🧩 Verification: open modal
     if (i.isButton() && i.customId.startsWith("verif_modal_open_")) {
       const parts = i.customId.split("_");
       const userId = parts.slice(3).join("_");
@@ -112,7 +117,7 @@ export async function execute(i, { warnings, verifSettings, verifCodes, joinSett
       return await i.showModal(modal);
     }
 
-    // Verification: modal submit
+    // 🧩 Verification: modal submit
     if (i.isModalSubmit() && i.customId.startsWith("verif_modal_")) {
       const parts = i.customId.split("_");
       const userId = parts.slice(2).join("_");
