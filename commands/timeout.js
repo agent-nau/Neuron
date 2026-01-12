@@ -17,8 +17,7 @@ export async function execute(i) {
   try {
     const m = await i.guild.members.fetch(user.id);
     await m.timeout(duration * 60000, reason);
-    await i.reply(`⏳ Timed out **${user.tag}** for ${duration} minutes.`);
-    await i.reply(`**Reason: ${reason}**`);
+    await i.reply(`⏳ Timed out **${user.tag}** for ${duration} minutes. **Reason: ${reason}**`);
   } catch {
     await i.reply({ content: `❌ Failed to timeout ${user.tag}`, ephemeral: true });
   }
