@@ -54,7 +54,7 @@ Optional variables may include `CLIENT_ID`, `GUILD_ID`, or hosting-specific keys
 
 ## 📚 Commands & Features
 
-- Moderation: `/kick`, `/ban`, `/timeout`, `/warn`, `/warnings`, `/clear`, `/lockdown`
+- Moderation: `/kick`, `/ban`, `/timeout`, `/removetimeout`, `/warn`, `/warnings`, `/clear`, `/lockdown`
 - Utilities: `/ping`, `/serverinfo`, `/say`, `/embed`, `/help`
 - Setup: `/verify setup`, `/ticket setup`, `/autojoin setup`
 
