@@ -1,4 +1,4 @@
-import { SlashCommandIntegerOption, ActionRowBuilder, StringSelectMenuBuilde, StringSelectMenuOptionBuilder} from "discord.js"; 
+import { SlashCommandIntegerOption, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder} from "discord.js"; 
 
 export const category = "Utility";
 export const data = {
