@@ -22,27 +22,14 @@ export async function execute(i) {
                 new StringSelectMenuOptionBuilder()
                     .setLabel("Role 1")
                     .setValue("role1"),
-                    new StringSelectMenuOptionBuilder()
+                new StringSelectMenuOptionBuilder()
                     .setLabel("Role 2")
                     .setValue("role2"),
-                    new StringSelectMenuOptionBuilder()
+                new StringSelectMenuOptionBuilder()
                     .setLabel("Role 3")
                     .setValue("role3")
             ])
     );
     await channel.send({ content: "Select a role:", components: [row] });
     await i.reply({ content: "✅ Self-role menu set up.", ephemeral: true });
-}       r()
-r()
-            .setPlaceholder("Select a role")
-            .addOptions([
-                new StringSelectMenuOptionBuilder()
-                    .setLabel("Role 1")
-                    .setValue("role1"),
-                    new StringSelectMenuOptionBuilder()
-                    .setLabel("Role 2")
-                    .setValue("role2"),
-                    new StringSelectMenuOptionBuilder()
-                    .setLabel("Role 3")
-                    .setValue("role3")
-            ])
+}
