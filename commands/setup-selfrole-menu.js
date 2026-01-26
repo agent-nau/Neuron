@@ -1,16 +1,15 @@
-import { SlashCommandIntegerOption, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder} from "discord.js"; 
+import { SlashCommandBuilder, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from "discord.js"; 
 
 export const category = "Utility";
-export const data = {
-    name: "setup-selfrole-menu",
-    description: "Sets up a self-role menu in the specified channel.",
-    options: [
-        new SlashCommandIntegerOption()
+export const data = new SlashCommandBuilder()
+    .setName("setup-selfrole-menu")
+    .setDescription("Sets up a self-role menu in the specified channel.")
+    .addChannelOption(option =>
+        option
             .setName("channel")
             .setDescription("The channel to set up the menu in.")
             .setRequired(true)
-    ]
-};
+    );
 
 export async function execute(i) {
     const channel = i.options.getChannel("channel");
