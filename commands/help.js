@@ -1,36 +1,53 @@
-import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
+import {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+} from "discord.js";
 
 export const category = "Utility";
+
 export const data = new SlashCommandBuilder()
   .setName("help")
-  .setDescription("Command list");
+  .setDescription("Show all commands with pagination");
 
-export async function execute(i) {
-  const commands = i.client.commands;
-  const categories = {};
+export async function execute(interaction) {
+  const commands = [...interaction.client.commands.values()];
+  const pageSize = 5;
+  const page = 0;
 
-  for (const command of commands.values()) {
-    if (!categories[command.category]) {
-      categories[command.category] = [];
-    }
-    categories[command.category].push(`\`/${command.data.name}\` — ${command.data.description}`);
-  }
+  const totalPages = Math.ceil(commands.length / pageSize);
+  const pageCommands = commands.slice(page * pageSize, (page + 1) * pageSize);
 
   const embed = new EmbedBuilder()
-    .setTitle("📖 Bot Commands")
-    .setDescription("Here’s a list of available commands grouped by category:")
-    .setColor("#00bfff")
-    .setFooter({ text: "Use / followed by the command name to activate." });
+    .setTitle("📘 Help Menu")
+    .setDescription("Below is a list of available commands:")
+    .setColor(0x00bfff);
 
-  for (const categoryName in categories) {
+  for (const cmd of pageCommands) {
     embed.addFields({
-      name: categoryName,
-      value: categories[categoryName].join("\n"),
+      name: `/${cmd.data.name}`,
+      value: cmd.data.description || "No description",
     });
   }
 
-  await i.reply({
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`help_prev_${interaction.user.id}_${page}`)
+      .setLabel("◀ Previous")
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(true),
+    new ButtonBuilder()
+      .setCustomId(`help_next_${interaction.user.id}_${page}`)
+      .setLabel("Next ▶")
+      .setStyle(ButtonStyle.Primary)
+      .setDisabled(totalPages <= 1)
+  );
+
+  await interaction.reply({
     embeds: [embed],
+    components: [row],
     ephemeral: true,
   });
 }

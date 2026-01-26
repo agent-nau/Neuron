@@ -1,24 +1,62 @@
 import { SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
 
 export const category = "Moderation";
+
 export const data = new SlashCommandBuilder()
   .setName("timeout")
-  .setDescription("Timeout a member")
-  .addUserOption(o => o.setName("user").setDescription("User").setRequired(true))
-  .addIntegerOption(o => o.setName("duration").setDescription("Minutes").setRequired(true).setMinValue(1).setMaxValue(10080))
-  .addStringOption(o => o.setName("reason").setDescription("Reason"))
+  .setDescription("Timeout a member for a specific duration.")
+  .addUserOption(option =>
+    option.setName("user")
+      .setDescription("The user to timeout")
+      .setRequired(true)
+  )
+  .addStringOption(option =>
+    option.setName("duration")
+      .setDescription("Duration (10m, 1h, 1d)")
+      .setRequired(true)
+  )
+  .addStringOption(option =>
+    option.setName("reason")
+      .setDescription("Reason for timeout")
+      .setRequired(false)
+  )
   .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers);
 
-export async function execute(i) {
-  const user = i.options.getUser("user");
-  const duration = i.options.getInteger("duration");
-  const reason = i.options.getString("reason") || "No reason provided";
+export async function execute(interaction) {
+  const user = interaction.options.getUser("user");
+  const member = await interaction.guild.members.fetch(user.id);
+  const duration = interaction.options.getString("duration");
+  const reason = interaction.options.getString("reason") || "No reason provided";
+
+  const timeRegex = /^(\d+)(s|m|h|d)$/;
+  const match = duration.match(timeRegex);
+
+  if (!match) {
+    return interaction.reply({
+      content: "Invalid duration format. Use: 10m, 1h, 1d",
+      ephemeral: true
+    });
+  }
+
+  const amount = parseInt(match[1]);
+  const unit = match[2];
+
+  let ms = 0;
+  switch (unit) {
+    case "s": ms = amount * 1000; break;
+    case "m": ms = amount * 60 * 1000; break;
+    case "h": ms = amount * 60 * 60 * 1000; break;
+    case "d": ms = amount * 24 * 60 * 60 * 1000; break;
+  }
 
   try {
-    const m = await i.guild.members.fetch(user.id);
-    await m.timeout(duration * 60000, reason);
-    await i.reply(`⏳ Timed out **${user.tag}** for ${duration} minutes.`);
-  } catch {
-    await i.reply({ content: `❌ Failed to timeout ${user.tag}`, ephemeral: true });
+    await member.timeout(ms, reason);
+    interaction.reply(`⏳ **${user.tag}** has been timed out for **${duration}**.\nReason: ${reason}`);
+  } catch (err) {
+    console.error(err);
+    interaction.reply({
+      content: "Failed to timeout the user.",
+      ephemeral: true
+    });
   }
 }

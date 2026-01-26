@@ -6,7 +6,6 @@
 ![Discord](https://img.shields.io/badge/Discord-Bot-7289DA?logo=discord&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node-16%2B-green?logo=nodedotjs&logoColor=white)
 ![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)
-![Repo Size](https://img.shields.io/github/repo-size/agent-nau/Neuron)
 
 A fast, modular Discord bot focused on moderation, verification, and ticketing — built with extensibility in mind.
 
@@ -55,7 +54,7 @@ Optional variables may include `CLIENT_ID`, `GUILD_ID`, or hosting-specific keys
 
 ## 📚 Commands & Features
 
-- Moderation: `/kick`, `/ban`, `/timeout`, `/warn`, `/warnings`, `/clear`, `/lockdown`
+- Moderation: `/kick`, `/ban`, `/timeout`, `/removetimeout`, `/warn`, `/warnings`, `/clear`, `/lockdown`
 - Utilities: `/ping`, `/serverinfo`, `/say`, `/embed`, `/help`
 - Setup: `/verify setup`, `/ticket setup`, `/autojoin setup`
 
