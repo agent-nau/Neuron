@@ -19,6 +19,30 @@ export async function execute(i, { warnings, verifSettings, verifCodes, joinSett
       await command.execute(i, { warnings, verifSettings, verifCodes, joinSettings });
     }
 
+    // 📖 Help menu category selection
+    if (i.isStringSelectMenu() && i.customId === "help-category") {
+      const selectedCategory = i.values[0];
+      const commands = [...client.commands.values()].filter(cmd => cmd.category === selectedCategory);
+
+      const embed = new EmbedBuilder()
+        .setTitle(`📘 ${selectedCategory} Commands`)
+        .setDescription(`Commands in the ${selectedCategory} category:`)
+        .setColor(0x00bfff);
+
+      if (commands.length === 0) {
+        embed.setDescription("No commands in this category.");
+      } else {
+        for (const cmd of commands) {
+          embed.addFields({
+            name: `/${cmd.data.name}`,
+            value: cmd.data.description || "No description",
+          });
+        }
+      }
+
+      return await i.update({ embeds: [embed], components: [] });
+    }
+
     // 📖 Help menu pagination buttons
     if (i.isButton() && i.customId.startsWith("help_")) {
       const parts = i.customId.split("_");
@@ -156,6 +180,19 @@ export async function execute(i, { warnings, verifSettings, verifCodes, joinSett
       } catch (err) {
         console.error("Verification role update error:", err);
         return await i.reply({ content: "❌ Failed to update roles. Check bot permissions.", ephemeral: true });
+      }
+    }
+
+    // 🎭 Role menu selection
+    if (i.isStringSelectMenu() && i.customId === "role-menu") {
+      try {
+        const selectedRoleId = i.values[0];
+        const member = await i.guild.members.fetch(i.user.id);
+        await member.roles.add(selectedRoleId);
+        return await i.reply({ content: `✅ Role added successfully!`, ephemeral: true });
+      } catch (err) {
+        console.error("Role menu error:", err);
+        return await i.reply({ content: "❌ Failed to add role. Check bot permissions.", ephemeral: true });
       }
     }
   } catch (e) {

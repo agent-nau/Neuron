@@ -2,48 +2,44 @@ import {
   SlashCommandBuilder,
   EmbedBuilder,
   ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
+  StringSelectMenuBuilder,
 } from "discord.js";
 
 export const category = "Utility";
 
 export const data = new SlashCommandBuilder()
   .setName("help")
-  .setDescription("Show all commands with pagination");
+  .setDescription("Show all commands by category");
 
 export async function execute(interaction) {
   const commands = [...interaction.client.commands.values()];
-  const pageSize = 5;
-  const page = 0;
+  
+  // Get unique categories
+  const categories = new Set();
+  commands.forEach(cmd => {
+    if (cmd.category) {
+      categories.add(cmd.category);
+    }
+  });
+  
+  const categoryArray = [...categories].sort();
+  
+  // Create category select menu
+  const selectMenu = new StringSelectMenuBuilder()
+    .setCustomId("help-category")
+    .setPlaceholder("Select a category")
+    .addOptions(categoryArray.map(cat => ({
+      label: cat,
+      value: cat,
+      description: `Commands in ${cat}`,
+    })));
 
-  const totalPages = Math.ceil(commands.length / pageSize);
-  const pageCommands = commands.slice(page * pageSize, (page + 1) * pageSize);
+  const row = new ActionRowBuilder().addComponents(selectMenu);
 
   const embed = new EmbedBuilder()
     .setTitle("📘 Help Menu")
-    .setDescription("Below is a list of available commands:")
+    .setDescription("Select a category to view commands:")
     .setColor(0x00bfff);
-
-  for (const cmd of pageCommands) {
-    embed.addFields({
-      name: `/${cmd.data.name}`,
-      value: cmd.data.description || "No description",
-    });
-  }
-
-  const row = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId(`help_prev_${interaction.user.id}_${page}`)
-      .setLabel("◀ Previous")
-      .setStyle(ButtonStyle.Secondary)
-      .setDisabled(true),
-    new ButtonBuilder()
-      .setCustomId(`help_next_${interaction.user.id}_${page}`)
-      .setLabel("Next ▶")
-      .setStyle(ButtonStyle.Primary)
-      .setDisabled(totalPages <= 1)
-  );
 
   await interaction.reply({
     embeds: [embed],

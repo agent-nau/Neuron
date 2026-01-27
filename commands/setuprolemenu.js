@@ -1,5 +1,7 @@
 import { SlashCommandBuilder, ActionRowBuilder, StringSelectMenuBuilder, EmbedBuilder } from 'discord.js';
 
+export const category = 'Role Management';
+
 export const data = new SlashCommandBuilder()
   .setName('setupmenuroleadd')
   .setDescription('Setup a role menu with descriptions')
@@ -35,4 +37,3 @@ export async function execute(interaction) {
     .setColor(0x00AE86);
 
   await interaction.reply({ embeds: [embed], components: [row] });
-}
