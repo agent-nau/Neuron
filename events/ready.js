@@ -1,10 +1,10 @@
 import { ActivityType, REST, Routes } from "discord.js";
 
-export const name = "clientReady";
+export const name = "ready";
 export const once = true;
 
 export async function execute(client) {
-  console.log(`Logged in as ${client.user.tag}`);
+  console.log(`✅ Logged in as ${client.user.tag}`);
 
   const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_BOT_TOKEN);
   const body = client.commands.map(c => c.data.toJSON());
