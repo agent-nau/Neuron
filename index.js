@@ -62,4 +62,8 @@ if (!process.env.DISCORD_BOT_TOKEN) {
   process.exit(1);
 }
 
-client.login(process.env.DISCORD_BOT_TOKEN);
+console.log('📡 Attempting to login with token...');
+client.login(process.env.DISCORD_BOT_TOKEN).catch(err => {
+  console.error('❌ Failed to login:', err.message);
+  process.exit(1);
+});
