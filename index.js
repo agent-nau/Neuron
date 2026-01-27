@@ -57,13 +57,33 @@ process.on('uncaughtException', error => {
   process.exit(1);
 });
 
-if (!process.env.DISCORD_BOT_TOKEN) {
-  console.error('❌ DISCORD_BOT_TOKEN environment variable is not set!');
+const token = process.env.DISCORD_BOT_TOKEN;
+
+if (!token) {
+  console.error('❌ DISCORD_BOT_TOKEN is not set!');
   process.exit(1);
 }
 
-console.log('📡 Attempting to login with token...');
-client.login(process.env.DISCORD_BOT_TOKEN).catch(err => {
-  console.error('❌ Failed to login:', err.message);
+if (token.length < 50) {
+  console.error('❌ DISCORD_BOT_TOKEN looks invalid (too short):', token.substring(0, 10) + '...');
   process.exit(1);
-});
+}
+
+console.log('📡 Token found, attempting to login...');
+console.log('📡 Token starts with:', token.substring(0, 10) + '...');
+
+const loginTimeout = setTimeout(() => {
+  console.error('❌ Login timeout - bot took too long to connect');
+  process.exit(1);
+}, 15000);
+
+client.login(token)
+  .then(() => {
+    clearTimeout(loginTimeout);
+    console.log('✅ Login successful, waiting for ready event...');
+  })
+  .catch(err => {
+    clearTimeout(loginTimeout);
+    console.error('❌ Login failed:', err.message);
+    process.exit(1);
+  });
