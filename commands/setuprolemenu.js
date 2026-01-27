@@ -10,7 +10,7 @@ export const data = new SlashCommandBuilder()
       .setDescription('First role to add')
       .setRequired(true))
   .addStringOption(option =>
-    option.setName('roledesc1')
+    option.setName('roledescription1')
       .setDescription('Description for the first role')
       .setRequired(true));
 
