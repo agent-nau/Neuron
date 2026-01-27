@@ -1,3 +1,4 @@
+console.log('--- RUNNING LATEST VERSION OF INDEX.JS ---');
 import { Client, GatewayIntentBits, Collection } from "discord.js";
 import { startKeepAlive } from "./keep-alive.js";
 import fs from "node:fs";
