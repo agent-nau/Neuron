@@ -37,3 +37,4 @@ export async function execute(interaction) {
     .setColor(0x00AE86);
 
   await interaction.reply({ embeds: [embed], components: [row] });
+}
