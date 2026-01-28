@@ -1,4 +1,10 @@
 console.log('--- RUNNING LATEST VERSION OF INDEX.JS ---');
+
+let i = 0;
+setInterval(() => {
+  console.log(`-- Event Loop Tick: ${i++} --`);
+}, 1000);
+
 import { Client, GatewayIntentBits, Collection } from "discord.js";
 import { startKeepAlive } from "./keep-alive.js";
 import fs from "node:fs";
@@ -71,7 +77,19 @@ if (!token) {
 
 console.log('📡 Attempting to login...');
 
-client.login(token).catch(err => {
-  console.error('❌ Login failed:', err.message);
-  process.exit(1);
-});
+const login = async () => {
+  try {
+    await Promise.race([
+      client.login(token),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Login timed out after 15 seconds.')), 15000)
+      )
+    ]);
+  } catch (err) {
+    console.error(`❌ Login failed: ${err.message}`);
+    console.error('This is likely a network issue. Please check if Render can connect to Discord\'s gateway.');
+    process.exit(1);
+  }
+};
+
+login();
