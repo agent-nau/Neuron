@@ -20,10 +20,14 @@ const client = new Client({
   ],
 });
 
+// Add detailed debug logging
+client.on('debug', console.log);
+
 
 client.commands = new Collection();
+
+// Load commands
 const commandsPath = path.join(__dirname, "commands");
-console.log('📂 Loading commands from:', commandsPath);
 const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith(".js"));
 
 for (const file of commandFiles) {
@@ -41,22 +45,17 @@ for (const file of commandFiles) {
   }
 }
 
+// Load events
 const eventsPath = path.join(__dirname, "events");
-console.log('📂 Loading events from:', eventsPath);
 const eventFiles = fs.readdirSync(eventsPath).filter(file => file.endsWith(".js"));
 
 for (const file of eventFiles) {
   const filePath = path.join(eventsPath, file);
-  try {
-    const event = await import(filePath);
-     if (event.once) {
-        client.once(event.name, (...args) => event.execute(...args));
-      } else {
-        client.on(event.name, (...args) => event.execute(...args, { warnings, verifSettings, verifCodes, joinSettings, generateCode, client }));
-      }
-    console.log(`✅ Loaded event: ${event.name}`);
-  } catch(error) {
-    console.error(`❌ Failed to load event at ${filePath}:`, error);
+  const event = await import(filePath);
+  if (event.once) {
+    client.once(event.name, (...args) => event.execute(...args));
+  } else {
+    client.on(event.name, (...args) => event.execute(...args, { warnings, verifSettings, verifCodes, joinSettings, generateCode, client }));
   }
 }
 
@@ -77,13 +76,13 @@ process.on('uncaughtException', error => {
 const token = process.env.DISCORD_BOT_TOKEN;
 
 if (!token) {
-  console.error('❌ DISCORD_BOT_TOKEN is not set! Please set it in your Render environment variables.');
+  console.error('❌ DISCORD_BOT_TOKEN is not set!');
   process.exit(1);
 } else {
   console.log(`🔑 Bot token loaded (ending with ...${token.slice(-5)})`);
 }
 
-console.log('📡 Attempting to login to Discord...');
+console.log('📡 Attempting to login...');
 
 const login = async () => {
   try {
@@ -95,11 +94,7 @@ const login = async () => {
     ]);
   } catch (err) {
     console.error(`❌ Login failed: ${err.message}`);
-    if (err.message.includes('token')) {
-        console.error('Your token might be invalid. Please double-check it.');
-    } else {
-        console.error('This could be a network issue. Please check if Render can connect to Discord\'s gateway, or if your bot\'s IP is banned.');
-    }
+    console.error('This is likely a network issue. Please check if Render can connect to Discord\'s gateway.');
     process.exit(1);
   }
 };
