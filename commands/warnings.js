@@ -7,7 +7,7 @@ export const data = new SlashCommandBuilder()
   .addUserOption(o => o.setName("user").setDescription("User").setRequired(true))
   .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers);
 
-export async function execute(i, warnings) {
+export async function execute(i, { warnings }) {
   const user = i.options.getUser("user");
   const list = warnings.get(user.id) || [];
 
