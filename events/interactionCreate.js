@@ -181,5 +181,4 @@ export async function execute(i, { warnings, verifSettings, verifCodes, joinSett
         console.error("Verification role update error:", err);
         return await i.reply({ content: "❌ Failed to update roles. Check bot permissions.", ephemeral: true });
       }
-    }
-}
+  }
