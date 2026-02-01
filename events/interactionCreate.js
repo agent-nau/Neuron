@@ -182,28 +182,4 @@ export async function execute(i, { warnings, verifSettings, verifCodes, joinSett
         return await i.reply({ content: "❌ Failed to update roles. Check bot permissions.", ephemeral: true });
       }
     }
-
-    // 🎭 Role menu selection
-    if (i.isStringSelectMenu() && i.customId === "role-menu") {
-      try {
-        const selectedRoleId = i.values[0];
-        const member = await i.guild.members.fetch(i.user.id);
-        await member.roles.add(selectedRoleId);
-        return await i.reply({ content: `✅ Role added successfully!`, ephemeral: true });
-      } catch (err) {
-        console.error("Role menu error:", err);
-        return await i.reply({ content: "❌ Failed to add role. Check bot permissions.", ephemeral: true });
-      }
-    }
-  } catch (e) {
-    console.error(e);
-    try {
-      if (i.replied || i.deferred) {
-        return await i.followUp({ content: "❌ Error occurred.", ephemeral: true });
-      }
-      return await i.reply({ content: "❌ Error occurred.", ephemeral: true });
-    } catch (err) {
-      console.error("Failed to notify user about error:", err);
-    }
-  }
 }
