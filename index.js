@@ -59,44 +59,4 @@ for (const file of eventFiles) {
   }
 }
 
-// Error handling
-client.on('error', error => {
-  console.error('🚨 Discord client error:', error);
-});
-
-process.on('unhandledRejection', error => {
-  console.error('🚨 Unhandled promise rejection:', error);
-});
-
-process.on('uncaughtException', error => {
-  console.error('🚨 Uncaught exception:', error);
-  process.exit(1);
-});
-
-const token = process.env.DISCORD_BOT_TOKEN;
-
-if (!token) {
-  console.error('❌ DISCORD_BOT_TOKEN is not set!');
-  process.exit(1);
-} else {
-  console.log(`🔑 Bot token loaded (ending with ...${token.slice(-5)})`);
-}
-
-console.log('📡 Attempting to login...');
-
-const login = async () => {
-  try {
-    await Promise.race([
-      client.login(token),
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Login timed out after 15 seconds.')), 15000)
-      )
-    ]);
-  } catch (err) {
-    console.error(`❌ Login failed: ${err.message}`);
-    console.error('This is likely a network issue. Please check if Render can connect to Discord\'s gateway.');
-    process.exit(1);
-  }
-};
-
-login();
+client.login(process.env.DISCORD_BOT_TOKEN);
