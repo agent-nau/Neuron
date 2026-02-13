@@ -13,6 +13,7 @@ export const name = "interactionCreate";
 export async function execute(i, { warnings, verifSettings, verifCodes, joinSettings, generateCode, client }) {
   try {
     // Slash commands
+
     if (i.isChatInputCommand()) {
       const command = client.commands.get(i.commandName);
       if (!command) return;
@@ -181,4 +182,9 @@ export async function execute(i, { warnings, verifSettings, verifCodes, joinSett
         console.error("Verification role update error:", err);
         return await i.reply({ content: "❌ Failed to update roles. Check bot permissions.", ephemeral: true });
       }
+    }
+
+  } catch (error) {
+    console.error("interactionCreate error:", error);
   }
+}
