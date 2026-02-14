@@ -1,44 +1,36 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
-import fetch from "node-fetch";
+import fetch from "node-fetch"; 
 
 export const category = "Utility";
 
 export const data = new SlashCommandBuilder()
   .setName("translate")
-  .setDescription("Translate text or a message by ID into another language")
+  .setDescription("Translate text into another language")
   .addStringOption(option =>
     option.setName("text")
-      .setDescription("Text to translate OR a message ID")
+      .setDescription("Text to translate")
       .setRequired(true)
   )
   .addStringOption(option =>
     option.setName("to")
       .setDescription("Target language (e.g., en, es, fr, ja)")
       .setRequired(true)
+  )
+  .addStringOption(option =>
+    option.setName("message_id")
+      .setDescription("Optional: reply to a specific message ID")
+      .setRequired(false)
   );
 
 export async function execute(interaction) {
-  const input = interaction.options.getString("text");
+  const text = interaction.options.getString("text");
   const targetLang = interaction.options.getString("to");
+  const messageId = interaction.options.getString("message_id");
 
-  let textToTranslate = input;
-
-  if (/^\d{17,20}$/.test(input)) {
-    try {
-      const targetMsg = await interaction.channel.messages.fetch(input);
-      if (targetMsg) {
-        textToTranslate = targetMsg.content;
-      }
-    } catch (err) {
-      return interaction.reply({
-        content: "❌ Could not fetch that message ID.",
-        ephemeral: true,
-      });
-    }
-  }
+  let textToTranslate = text;
 
   try {
-      const res = await fetch("https://translate.argosopentech.com/translate", {
+    const res = await fetch("https://translate.argosopentech.com/translate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -59,7 +51,17 @@ export async function execute(interaction) {
       )
       .setColor(0x00bfff);
 
-    await interaction.reply({ embeds: [embed], ephemeral: false });
+    if (messageId) {
+      try {
+        const targetMsg = await interaction.channel.messages.fetch(messageId);
+        await targetMsg.reply({ embeds: [embed] });
+        await interaction.reply({ content: "✅ Translation sent as a reply!", ephemeral: true });
+      } catch (err) {
+        await interaction.reply({ content: "❌ Could not fetch that message ID.", ephemeral: true });
+      }
+    } else {
+      await interaction.reply({ embeds: [embed], ephemeral: false });
+    }
   } catch (err) {
     console.error(err);
     await interaction.reply({
