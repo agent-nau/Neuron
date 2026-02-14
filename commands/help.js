@@ -13,7 +13,7 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction) {
   const commands = [...interaction.client.commands.values()];
-  
+
   // Get unique categories
   const categories = new Set();
   commands.forEach(cmd => {
@@ -21,9 +21,9 @@ export async function execute(interaction) {
       categories.add(cmd.category);
     }
   });
-  
+
   const categoryArray = [...categories].sort();
-  
+
   // Create category select menu
   const selectMenu = new StringSelectMenuBuilder()
     .setCustomId("help-category")
@@ -45,5 +45,35 @@ export async function execute(interaction) {
     embeds: [embed],
     components: [row],
     ephemeral: true,
+  });
+
+  // Collector to handle category selection
+  const collector = interaction.channel.createMessageComponentCollector({
+    componentType: "SELECT_MENU",
+    time: 60_000, // 1 minute
+  });
+
+  collector.on("collect", async i => {
+    if (i.customId === "help-category") {
+      const selected = i.values[0];
+      const cmdsInCategory = commands
+        .filter(cmd => cmd.category === selected)
+        .map(cmd => `\`${cmd.data.name}\``)
+        .join(", ");
+
+      const newEmbed = new EmbedBuilder()
+        .setTitle("📘 Help Menu")
+        .setDescription(
+          `**Categories:**\n${categoryArray.join(", ")}\n\n` +
+          `**Commands in ${selected}:**\n${cmdsInCategory}`
+        )
+        .setColor(0x00bfff);
+
+      // Always re‑send the menu so it stays visible
+      await i.update({
+        embeds: [newEmbed],
+        components: [row],
+      });
+    }
   });
 }
