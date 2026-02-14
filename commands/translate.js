@@ -1,72 +1,43 @@
-import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
-import fetch from "node-fetch"; 
-
-export const category = "Utility";
+import { SlashCommandBuilder } from "discord.js";
+import fetch from "node-fetch";
 
 export const data = new SlashCommandBuilder()
   .setName("translate")
-  .setDescription("Translate text into another language")
+  .setDescription("Translate text using Argos Translate")
   .addStringOption(option =>
     option.setName("text")
-      .setDescription("Text to translate")
+      .setDescription("The text to translate")
       .setRequired(true)
   )
   .addStringOption(option =>
-    option.setName("to")
-      .setDescription("Target language (e.g., en, es, fr, ja)")
+    option.setName("target")
+      .setDescription("Target language code (e.g., es, fr, de)")
       .setRequired(true)
-  )
-  .addStringOption(option =>
-    option.setName("message_id")
-      .setDescription("Optional: reply to a specific message ID")
-      .setRequired(false)
   );
 
 export async function execute(interaction) {
   const text = interaction.options.getString("text");
-  const targetLang = interaction.options.getString("to");
-  const messageId = interaction.options.getString("message_id");
-
-  let textToTranslate = text;
+  const target = interaction.options.getString("target");
 
   try {
-    const res = await fetch("https://translate.argosopentech.com/translate", {
+    const response = await fetch("https://translate.argosopentech.com/translate", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        q: textToTranslate,
-        source: "auto",
-        target: targetLang,
-        format: "text",
-      }),
+      body: JSON.stringify({ q: text, source: "en", target }),
+      headers: { "Content-Type": "application/json" }
     });
 
-    const data = await res.json();
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
 
-    const embed = new EmbedBuilder()
-      .setTitle("🌐 Translation")
-      .addFields(
-        { name: "Original", value: textToTranslate },
-        { name: `Translated (${targetLang})`, value: data.translatedText }
-      )
-      .setColor(0x00bfff);
-
-    if (messageId) {
-      try {
-        const targetMsg = await interaction.channel.messages.fetch(messageId);
-        await targetMsg.reply({ embeds: [embed] });
-        await interaction.reply({ content: "✅ Translation sent as a reply!", ephemeral: true });
-      } catch (err) {
-        await interaction.reply({ content: "❌ Could not fetch that message ID.", ephemeral: true });
-      }
-    } else {
-      await interaction.reply({ embeds: [embed], ephemeral: false });
-    }
-  } catch (err) {
-    console.error(err);
     await interaction.reply({
-      content: "❌ Sorry, I couldn’t translate that right now.",
-      ephemeral: true,
+      content: `✅ Translation: ${data.translatedText}`,
+      flags: 64   // replaces deprecated ephemeral:true
+    });
+  } catch (error) {
+    console.error("❌ Translation error:", error);
+    await interaction.reply({
+      content: "❌ Translation service is currently unavailable. Please try again later.",
+      flags: 64 
     });
   }
 }
