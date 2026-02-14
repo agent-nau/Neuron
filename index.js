@@ -20,8 +20,7 @@ const client = new Client({
   ],
 });
 
-// Add detailed debug logging
-client.on('debug', console.log);
+client.on('debug', () => {});
 
 
 client.commands = new Collection();
