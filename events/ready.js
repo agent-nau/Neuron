@@ -1,6 +1,6 @@
 import { ActivityType, REST, Routes } from "discord.js";
 
-export const name = "ready";
+export const name = "clientReady";
 export const once = true;
 
 export async function execute(client) {
@@ -10,7 +10,6 @@ export async function execute(client) {
   const body = client.commands.map(c => c.data.toJSON());
 
   try {
-    // 🌍 Register commands globally
     await rest.put(Routes.applicationCommands(client.user.id), { body });
     console.log("🌍 Global commands registered");
   } catch (e) {
@@ -19,7 +18,6 @@ export async function execute(client) {
 
   const statuses = [
     { name: "Made by Lecs @ Vecs Corp.", type: ActivityType.Playing },
-    { name: "for spam and raids", type: ActivityType.Watching },
     { name: "/help for commands", type: ActivityType.Listening },
   ];
 
