@@ -20,7 +20,7 @@ export async function execute(interaction) {
   const target = interaction.options.getString("target");
 
   try {
-    const response = await fetch("https://translate.argosopentech.com/translate", {
+    const response = await fetch("https://libretranslate.com/translate", {
       method: "POST",
       body: JSON.stringify({ q: text, source: "en", target }),
       headers: { "Content-Type": "application/json" }
