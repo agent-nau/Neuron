@@ -28,21 +28,16 @@ export async function execute(interaction) {
   await interaction.deferReply({ flags: 64 });
 
   try {
-    const response = await fetch("https://api.datpmt.com/api/v1/dictionary/translate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        text,      
-        source,     
-        target      
-      })
-    });
+    const url = `https://api.datpmt.com/api/v1/dictionary/translate?text=${encodeURIComponent(text)}&source=${source}&target=${target}`;
 
+    const response = await fetch(url);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
     const data = await response.json();
 
-    // Assuming API returns { translatedText: "..." }
-    await interaction.editReply(`✅ Translation: ${data.translatedText}`);
+    const translated = data.translatedText || data.result || JSON.stringify(data);
+
+    await interaction.editReply(`✅ Translation: ${translated}`);
   } catch (error) {
     console.error("❌ Translation error:", error);
     await interaction.editReply("❌ Translation service is currently unavailable. Please try again later.");
