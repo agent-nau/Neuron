@@ -10,48 +10,46 @@ async function translateLingva(text, target) {
   return { translation: data.translation, detected: data.info.detectedSource };
 }
 
-export const command = {
-  data: new SlashCommandBuilder()
-    .setName("translate")
-    .setDescription("Translate text using Lingva (auto-detect source)")
-    .addStringOption(opt =>
-      opt.setName("text").setDescription("Text to translate").setRequired(true)
-    )
-    .addStringOption(opt =>
-      opt.setName("to").setDescription("Target language code (e.g. en)").setRequired(true)
-    )
-    .addStringOption(opt =>
-      opt.setName("reply").setDescription("Message ID or message link to reply to").setRequired(false)
-    ),
+export const data = new SlashCommandBuilder()
+  .setName("translate")
+  .setDescription("Translate text using Lingva (auto-detect source)")
+  .addStringOption(opt =>
+    opt.setName("text").setDescription("Text to translate").setRequired(true)
+  )
+  .addStringOption(opt =>
+    opt.setName("to").setDescription("Target language code (e.g. en)").setRequired(true)
+  )
+  .addStringOption(opt =>
+    opt.setName("reply").setDescription("Message ID or message link to reply to").setRequired(false)
+  );
 
-  async execute(interaction) {
-    const text = interaction.options.getString("text");
-    const to = interaction.options.getString("to");
-    const messageRef = interaction.options.getString("reply");
+export async function execute(interaction) {
+  const text = interaction.options.getString("text");
+  const to = interaction.options.getString("to");
+  const messageRef = interaction.options.getString("reply");
 
-    try {
-      const { translation, detected } = await translateLingva(text, to);
+  try {
+    const { translation, detected } = await translateLingva(text, to);
 
-      if (messageRef) {
-        let messageId;
+    if (messageRef) {
+      let messageId;
 
-        if (messageRef.startsWith("https://")) {
-          const parts = messageRef.split("/");
-          messageId = parts[parts.length - 1];
-        } else {
-          messageId = messageRef; 
-        }
-
-        const channel = interaction.channel;
-        const targetMessage = await channel.messages.fetch(messageId);
-
-        await targetMessage.reply(`**${detected} → ${to}:** ${translation}`);
-        await interaction.reply({ content: "✅ Translation posted as a reply!", ephemeral: true });
+      if (messageRef.startsWith("https://")) {
+        const parts = messageRef.split("/");
+        messageId = parts[parts.length - 1];
       } else {
-        await interaction.reply(`**${detected} → ${to}:** ${translation}`);
+        messageId = messageRef;
       }
-    } catch (err) {
-      await interaction.reply(`❌ Error: ${err.message}`);
+
+      const channel = interaction.channel;
+      const targetMessage = await channel.messages.fetch(messageId);
+
+      await targetMessage.reply(`**${detected} → ${to}:** ${translation}`);
+      await interaction.reply({ content: "✅ Translation posted as a reply!", ephemeral: true });
+    } else {
+      await interaction.reply(`**${detected} → ${to}:** ${translation}`);
     }
+  } catch (err) {
+    await interaction.reply(`❌ Error: ${err.message}`);
   }
-};
+}
