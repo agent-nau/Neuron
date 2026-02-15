@@ -1,6 +1,7 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
 
 export const category = "Utility";
+
 export const data = new SlashCommandBuilder()
   .setName("serverinfo")
   .setDescription("Server info");

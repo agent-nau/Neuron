@@ -1,6 +1,7 @@
 import { SlashCommandBuilder, PermissionFlagsBits } from "discord.js"; 
 
 export const category = "Role Management";
+
 export const data = new SlashCommandBuilder()
     .setName("removerole")
     .setDescription("Remove a role from a user")

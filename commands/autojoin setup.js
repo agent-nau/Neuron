@@ -1,6 +1,7 @@
 import { SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
 
 export const category = "Auto-Assign";
+
 export const data = new SlashCommandBuilder()
   .setName("autojoin")
   .setDescription("Auto-assign a role when users join")

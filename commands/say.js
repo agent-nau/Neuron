@@ -1,6 +1,7 @@
 import { SlashCommandBuilder, PermissionFlagsBits, ChannelType } from "discord.js";
 
 export const category = "Utility";
+
 export const data = new SlashCommandBuilder()
   .setName("say")
   .setDescription("Say something as bot")

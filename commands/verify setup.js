@@ -1,6 +1,7 @@
 import { SlashCommandBuilder, ChannelType, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle } from "discord.js";
 
 export const category = "Verification";
+
 export const data = new SlashCommandBuilder()
   .setName("verify")
   .setDescription("Verification system")

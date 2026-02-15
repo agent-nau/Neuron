@@ -1,6 +1,7 @@
 import { SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
 
 export const category = "Moderation";
+
 export const data = new SlashCommandBuilder()
   .setName("warnings")
   .setDescription("Show warnings")

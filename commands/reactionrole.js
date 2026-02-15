@@ -1,5 +1,7 @@
 import { SlashCommandBuilder, PermissionFlagsBits} from "discord.js";
+
 export const category = "Reaction Roles";
+
 export const data = new SlashCommandBuilder()
   .setName("reactionrole")
   .setDescription("Set up a reaction role message")

@@ -1,6 +1,7 @@
 import { SlashCommandBuilder, ChannelType } from "discord.js";
 
 export const category = "Tickets";
+
 export const data = new SlashCommandBuilder()
   .setName("ticket")
   .setDescription("Ticket system")

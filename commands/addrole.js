@@ -1,6 +1,7 @@
 import { SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
 
 export const category = "Role Management";
+
 export const data = new SlashCommandBuilder()
   .setName("addrole")
   .setDescription("Add a role to a user")

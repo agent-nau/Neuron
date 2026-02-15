@@ -7,6 +7,7 @@ const colorMap = {
 };
 
 export const category = "Utility";
+
 export const data = new SlashCommandBuilder()
   .setName("embed")
   .setDescription("Send an embed as the bot")

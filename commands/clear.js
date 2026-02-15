@@ -1,6 +1,7 @@
 import { SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
 
 export const category = "Moderation";
+
 export const data = new SlashCommandBuilder()
   .setName("clear")
   .setDescription("Bulk delete messages")
