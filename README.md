@@ -57,7 +57,7 @@ Optional variables may include `CLIENT_ID`, `GUILD_ID`, or hosting-specific keys
 
 - Role Management: `/addrole`, `/removerole`
 - Moderation: `/kick`, `/ban`, `/timeout`, `/removetimeout`, `/warnings`, `/clear`, `/lockdown`, `/warnings`
-- Utilities: `/ping`, `/serverinfo`, `/say`, `/embed`, `/help`, `/invite`
+- Utilities: `/ping`, `/serverinfo`, `/say`, `/embed`, `/help`, `/invite`, `/convert (may not work)`
 - Setup: `/verify setup`, `/ticket setup`, `/autojoin setup`, `/reactionrole`
 
 Commands are registered as global slash commands; expect a short propagation delay after first deploy.
