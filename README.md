@@ -46,6 +46,7 @@ Create a `.env` file at the project root with at least:
 ```
 DISCORD_BOT_TOKEN=your_bot_token_here
 SESSION_SECRET=session_secret
+SUPPORT_LINK=your_support_link
 ```
 
 Optional variables may include `CLIENT_ID`, `GUILD_ID`, or hosting-specific keys.
@@ -54,9 +55,10 @@ Optional variables may include `CLIENT_ID`, `GUILD_ID`, or hosting-specific keys
 
 ## 📚 Commands & Features
 
-- Moderation: `/kick`, `/ban`, `/timeout`, `/removetimeout`, `/warn`, `/warnings`, `/clear`, `/lockdown`
-- Utilities: `/ping`, `/serverinfo`, `/say`, `/embed`, `/help`
-- Setup: `/verify setup`, `/ticket setup`, `/autojoin setup`
+- Role Management: `/addrole`, `/removerole`
+- Moderation: `/kick`, `/ban`, `/timeout`, `/removetimeout`, `/warnings`, `/clear`, `/lockdown`, `/warnings`
+- Utilities: `/ping`, `/serverinfo`, `/say`, `/embed`, `/help`, `/invite`, `/convert (may not work)`
+- Setup: `/verify setup`, `/ticket setup`, `/autojoin setup`, `/reactionrole`
 
 Commands are registered as global slash commands; expect a short propagation delay after first deploy.
 
@@ -82,17 +84,11 @@ This project is licensed under the Apache License 2.0 — see [LICENSE](https://
 
 ## 🔗 Links
 
-- Repository: https://github.com/agent-nau/Neuron
-- Issues: https://github.com/agent-nau/Neuron/issues
+- Repository: [Neuron](https://github.com/agent-nau/Neuron)
+- Issues: [Issues](https://github.com/agent-nau/Neuron/issues)
 
 ---
 
 Made with ❤️ for Discord communities.
 
 ---
-
-## ☕ Support
-
-If you'd like to support development, you can buy me a coffee below:
-
-<a href='https://ko-fi.com/S6S21RUCJR' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi3.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
