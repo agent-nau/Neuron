@@ -1,4 +1,3 @@
-// commands/birthday.js
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
 import cron from "node-cron";
 
