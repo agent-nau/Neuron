@@ -1,12 +1,8 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
 import cron from "node-cron";
 
-// Shared store
 export const scheduledGreetings = [];
 
-export const category = "Fun";
-
-// AI-style generator
 function generateBirthdayMessage(name = "friend") {
   const adjectives = ["wonderful", "amazing", "fantastic", "incredible", "joyful", "magical"];
   const wishes = [
@@ -58,7 +54,7 @@ export const birthdayCommand = {
 
     const thumbnailUrl = targetUser
       ? targetUser.displayAvatarURL({ extension: "png", size: 256 })
-      : "https://cdn-icons-png.freepik.com/512/9123/9123699.png";
+      : "https://cdn-icons-png.flaticon.com/512/2917/2917641.png";
 
     const embed = new EmbedBuilder()
       .setColor(0xFFC0CB)
@@ -73,7 +69,6 @@ export const birthdayCommand = {
     } else if (mode === "schedule") {
       await interaction.reply(`✅ Greeting scheduled with cron: \`${cronExpr}\``);
 
-      // Save to list
       scheduledGreetings.push({
         user: name,
         message,
@@ -81,7 +76,6 @@ export const birthdayCommand = {
         channelId: interaction.channelId,
       });
 
-      // Schedule job
       cron.schedule(cronExpr, async () => {
         const channel = await interaction.client.channels.fetch(interaction.channelId);
         channel.send({ embeds: [embed] });
