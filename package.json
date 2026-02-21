@@ -14,7 +14,7 @@
     "bot"
   ],
   "author": "Agent-Nau",
-  "license": "NEURON DISCORD BOT LICENSE AGREEMENT (NDLA)",
+  "license": "NEURON DISCORD BOT LICENSE AGREEMENT (NDBLA)",
   "dependencies": {
     "@types/node": "^22.13.11",
     "discord.js": "^14.25.0",
