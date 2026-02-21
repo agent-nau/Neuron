@@ -1,119 +1,96 @@
-import { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder } from 'discord.js';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-export const category = "Utility";
-
-const tempDir = path.join(__dirname, '..', 'temp');
-if (!fs.existsSync(tempDir)) {
-    fs.mkdirSync(tempDir, { recursive: true });
-}
-
-const data = new SlashCommandBuilder()
-    .setName('convert')
-    .setDescription('Download YouTube audio and upload to Discord')
-    .addStringOption(option =>
-        option.setName('url')
-            .setDescription('YouTube video URL')
-            .setRequired(true));
+// commands/convert.js
+import fs from "fs";
+import path from "path";
+import fetch from "node-fetch";
+import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
 
 async function downloadFile(url, outputPath) {
+  try {
+    console.log("Attempting download:", url);
     const response = await fetch(url);
-    if (!response.ok) throw new Error(`Download failed: ${response.status}`);
-    
+
+    if (!response.ok) {
+      throw new Error(`Download failed: ${response.status} ${response.statusText}`);
+    }
+
     const buffer = await response.arrayBuffer();
     fs.writeFileSync(outputPath, Buffer.from(buffer));
-    
     return outputPath;
+  } catch (err) {
+    console.error("Download error:", err.message);
+    throw err;
+  }
 }
 
-async function execute(interaction) {
-    const url = interaction.options.getString('url');
+export default {
+  data: new SlashCommandBuilder()
+    .setName("convert")
+    .setDescription("Convert a YouTube video to MP3")
+    .addStringOption(option =>
+      option.setName("url")
+        .setDescription("YouTube video URL")
+        .setRequired(true)
+    ),
 
-    const match = url.match(/(?:v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/|youtube\.com\/watch\?v=)([a-zA-Z0-9_-]{11})/i);
-    const videoId = match ? match[1] : null;
-
-    if (!videoId) {
-        return interaction.reply({
-            content: '❌ Invalid YouTube URL.',
-            ephemeral: true
-        });
-    }
-
+  async execute(interaction) {
     await interaction.deferReply();
 
-    const tempFile = path.join(tempDir, `${videoId}.mp3`);
-
     try {
-        const apiUrl = `https://youtube-mp36.p.rapidapi.com/dl?id=${videoId}`;
-        
-        const apiResponse = await fetch(apiUrl, {
-            method: 'GET',
-            headers: {
-                'x-rapidapi-key': process.env.RAPIDAPI_KEY,
-                'x-rapidapi-host': 'youtube-mp36.p.rapidapi.com'
-            }
-        });
+      const url = interaction.options.getString("url");
+      const videoIdMatch = url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
+      if (!videoIdMatch) {
+        return interaction.editReply("❌ Invalid YouTube URL.");
+      }
 
-        if (!apiResponse.ok) {
-            throw new Error(`API Error: ${apiResponse.status}`);
+      const videoId = videoIdMatch[1];
+      const apiUrl = `https://youtube-mp36.p.rapidapi.com/dl?id=${videoId}`;
+
+      const response = await fetch(apiUrl, {
+        headers: {
+          "X-RapidAPI-Key": process.env.RAPIDAPI_KEY,
+          "X-RapidAPI-Host": "youtube-mp36.p.rapidapi.com"
         }
+      });
 
-        const data = await apiResponse.json();
+      const data = await response.json();
+      console.log("API response:", data);
 
-        if (data.status !== 'ok' || !data.link) {
-            return interaction.editReply({
-                content: `❌ ${data.msg || 'Failed to get download link'}`,
-                ephemeral: true
-            });
-        }
+      if (data.status !== "ok" || !data.link) {
+        return interaction.editReply(`⚠️ API error: ${data.msg || "No download link returned."}`);
+      }
 
-        await interaction.editReply('⬇️ Downloading audio...');
+      const filename = `${videoId}.mp3`;
+      const tempFile = path.join("temp", filename);
 
+      try {
         await downloadFile(data.link, tempFile);
+      } catch (err) {
+        return interaction.editReply(`⚠️ Could not download audio: ${err.message}`);
+      }
 
-        const stats = fs.statSync(tempFile);
-        const fileSizeMB = stats.size / (1024 * 1024);
+      // Build the embed
+      const embed = new EmbedBuilder()
+        .setTitle(data.title || "Converted Audio")
+        .setURL(url)
+        .setDescription("Here’s your converted MP3 file!")
+        .setThumbnail(data.thumb || null)
+        .addFields(
+          { name: "Duration", value: data.duration || "Unknown", inline: true },
+          { name: "File Size", value: data.filesize || "Unknown", inline: true }
+        )
+        .setColor(0x1DB954)
+        .setFooter({ text: "Powered by YouTube MP3 API" });
 
-        if (stats.size > 25 * 1024 * 1024) {
-            fs.unlinkSync(tempFile);
-            return interaction.editReply({
-                content: `❌ File too large (${fileSizeMB.toFixed(1)}MB). Max 25MB.\n🔗 [Download here](${data.link})`,
-                ephemeral: true
-            });
-        }
+      await interaction.editReply({
+        content: `✅ Converted: ${data.title}`,
+        embeds: [embed],
+        files: [tempFile]
+      });
 
-        const attachment = new AttachmentBuilder(tempFile, {
-            name: `${data.title?.replace(/[^a-z0-9]/gi, '_') || 'audio'}.mp3`
-        });
-
-        const embed = new EmbedBuilder()
-            .setTitle('🎵 Audio Downloaded')
-            .setDescription(`**${data.title || 'Unknown'}**`)
-            .setThumbnail(`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`)
-            .setColor(0x00FF00)
-            .addFields(
-                { name: 'Duration', value: data.duration ? `${Math.floor(data.duration / 60)}:${(data.duration % 60).toString().padStart(2, '0')}` : 'Unknown', inline: true },
-                { name: 'Size', value: `${fileSizeMB.toFixed(2)} MB`, inline: true }
-            );
-
-        await interaction.editReply({
-            embeds: [embed],
-            files: [attachment]
-        });
-
-        fs.unlinkSync(tempFile);
-
-    } catch (error) {
-        console.error(error);
-        if (fs.existsSync(tempFile)) fs.unlinkSync(tempFile);
-        await interaction.editReply('⚠️ Error downloading audio.');
+      fs.unlinkSync(tempFile); // cleanup
+    } catch (err) {
+      console.error("Convert command error:", err);
+      await interaction.editReply(`❌ Error: ${err.message}`);
     }
-}
-
-export { data, execute };
-export default { category, data, execute };
+  }
+};
