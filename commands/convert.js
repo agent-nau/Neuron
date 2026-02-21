@@ -8,7 +8,6 @@ const __dirname = path.dirname(__filename);
 
 export const category = "Utility";
 
-// Auto-create temp directory if it doesn't exist
 const tempDir = path.join(__dirname, '..', 'temp');
 if (!fs.existsSync(tempDir)) {
     fs.mkdirSync(tempDir, { recursive: true });
@@ -16,11 +15,7 @@ if (!fs.existsSync(tempDir)) {
 
 const data = new SlashCommandBuilder()
     .setName('convert')
-    .setDescription('Download YouTube audio/video')
-    .addStringOption(option =>
-        option.setName('format')
-            .setDescription('Format (mp3, videos, mergedstreams, videostreams, audiostreams)')
-            .setRequired(true))
+    .setDescription('Download YouTube audio and upload to Discord')
     .addStringOption(option =>
         option.setName('url')
             .setDescription('YouTube video URL')
@@ -39,48 +34,84 @@ async function downloadFile(url, outputPath) {
 async function execute(interaction) {
     const url = interaction.options.getString('url');
 
-    // Extract video ID from URL
-    const match = url.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    const match = url.match(/(?:v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/|youtube\.com\/watch\?v=)([a-zA-Z0-9_-]{11})/i);
     const videoId = match ? match[1] : null;
 
     if (!videoId) {
-        return interaction.reply('❌ Invalid YouTube URL.');
+        return interaction.reply({
+            content: '❌ Invalid YouTube URL.',
+            ephemeral: true
+        });
     }
 
-    try {
-        const res = await fetch(
-            `https://api.download-lagu-mp3.com/@api/json/${format}/${videoId}`
-        );
-        const data = await res.json();
+    await interaction.deferReply();
 
-        if (!data || !data.link) {
-            return interaction.reply('❌ Could not fetch download link. Please check the format and video ID.');
+    const tempFile = path.join(tempDir, `${videoId}.mp3`);
+
+    try {
+        const apiUrl = `https://youtube-mp36.p.rapidapi.com/dl?id=${videoId}`;
+        
+        const apiResponse = await fetch(apiUrl, {
+            method: 'GET',
+            headers: {
+                'x-rapidapi-key': process.env.RAPIDAPI_KEY,
+                'x-rapidapi-host': 'youtube-mp36.p.rapidapi.com'
+            }
+        });
+
+        if (!apiResponse.ok) {
+            throw new Error(`API Error: ${apiResponse.status}`);
         }
 
-        // Build embed
+        const data = await apiResponse.json();
+
+        if (data.status !== 'ok' || !data.link) {
+            return interaction.editReply({
+                content: `❌ ${data.msg || 'Failed to get download link'}`,
+                ephemeral: true
+            });
+        }
+
+        await interaction.editReply('⬇️ Downloading audio...');
+
+        await downloadFile(data.link, tempFile);
+
+        const stats = fs.statSync(tempFile);
+        const fileSizeMB = stats.size / (1024 * 1024);
+
+        if (stats.size > 25 * 1024 * 1024) {
+            fs.unlinkSync(tempFile);
+            return interaction.editReply({
+                content: `❌ File too large (${fileSizeMB.toFixed(1)}MB). Max 25MB.\n🔗 [Download here](${data.link})`,
+                ephemeral: true
+            });
+        }
+
+        const attachment = new AttachmentBuilder(tempFile, {
+            name: `${data.title?.replace(/[^a-z0-9]/gi, '_') || 'audio'}.mp3`
+        });
+
         const embed = new EmbedBuilder()
-            .setTitle(data.title || 'YouTube Video')
-            .setURL(`https://www.youtube.com/watch?v=${videoId}`)
-            .setDescription(data.info || 'Here is your requested video/audio.')
+            .setTitle('🎵 Audio Downloaded')
+            .setDescription(`**${data.title || 'Unknown'}**`)
             .setThumbnail(`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`)
-            .setColor(0xff0000);
+            .setColor(0x00FF00)
+            .addFields(
+                { name: 'Duration', value: data.duration ? `${Math.floor(data.duration / 60)}:${(data.duration % 60).toString().padStart(2, '0')}` : 'Unknown', inline: true },
+                { name: 'Size', value: `${fileSizeMB.toFixed(2)} MB`, inline: true }
+            );
 
-        // Buttons
-        const row = new ActionRowBuilder().addComponents(
-            new ButtonBuilder()
-                .setLabel('Watch on YouTube')
-                .setStyle(ButtonStyle.Link)
-                .setURL(`https://www.youtube.com/watch?v=${videoId}`),
-            new ButtonBuilder()
-                .setLabel('Download')
-                .setStyle(ButtonStyle.Link)
-                .setURL(data.link)
-        );
+        await interaction.editReply({
+            embeds: [embed],
+            files: [attachment]
+        });
 
-        await interaction.reply({ embeds: [embed], components: [row] });
-    } catch (err) {
-        console.error(err);
-        await interaction.reply('⚠️ Error fetching the download link.');
+        fs.unlinkSync(tempFile);
+
+    } catch (error) {
+        console.error(error);
+        if (fs.existsSync(tempFile)) fs.unlinkSync(tempFile);
+        await interaction.editReply('⚠️ Error downloading audio.');
     }
 }
 
