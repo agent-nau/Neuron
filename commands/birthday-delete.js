@@ -20,7 +20,7 @@ async function execute(interaction) {
     if (index === -1) {
         try {
             await interaction.user.send(`❌ Greeting #${greetId} not found. Use \`/birthday-list\` to see valid IDs.`);
-            return interaction.reply({ content: "📬 Check your DMs!", ephemeral: false });
+            return interaction.reply({ content: "📬 Check your DMs!", ephemeral: true });
         } catch {
             return interaction.reply({
                 content: `❌ Greeting #${greetId} not found.`,

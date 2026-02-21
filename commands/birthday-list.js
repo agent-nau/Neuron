@@ -11,7 +11,7 @@ async function execute(interaction) {
     if (scheduledGreetings.length === 0) {
         try {
             await interaction.user.send("📭 No birthday greetings scheduled.");
-            return interaction.reply({ content: "📬 Check your DMs!", ephemeral: false });
+            return interaction.reply({ content: "📬 Check your DMs!", ephemeral: true });
         } catch {
             return interaction.reply({ content: "📭 No birthday greetings scheduled.", ephemeral: true });
         }

@@ -105,27 +105,48 @@ const data = new SlashCommandBuilder()
             .setRequired(true))
     .addIntegerOption(option =>
         option.setName("hour")
-            .setDescription("Hour to send (0-23, 24h format)")
-            .setRequired(true)
-            .setMinValue(0)
-            .setMaxValue(23))
+            .setDescription("Hour to send (1-12)")
+            .setRequired(false)
+            .setMinValue(1)
+            .setMaxValue(12))
     .addIntegerOption(option =>
         option.setName("minute")
             .setDescription("Minute to send (0-59)")
-            .setRequired(true)
+            .setRequired(false)
             .setMinValue(0)
             .setMaxValue(59))
+    .addStringOption(option =>
+        option.setName("period")
+            .setDescription("AM or PM")
+            .setRequired(true)
+            .addChoices(
+                { name: "AM", value: "AM" },
+                { name: "PM", value: "PM" }
+            ))
     .addUserOption(option =>
         option.setName("user")
             .setDescription("The user to greet (defaults to yourself)")
+            .setRequired(false))
+    .addBooleanOption(option =>
+        option.setName("send-now")
+            .setDescription("Send the greeting immediately instead of scheduling")
             .setRequired(false));
 
 async function execute(interaction) {
     const targetUser = interaction.options.getUser("user");
     const name = targetUser ? targetUser.username : interaction.user.username;
     const dateInput = interaction.options.getString("date");
-    const hour = interaction.options.getInteger("hour");
+    const hour12 = interaction.options.getInteger("hour");
     const minute = interaction.options.getInteger("minute");
+    const period = interaction.options.getString("period");
+    const sendNowOption = interaction.options.getBoolean("send-now") || false;
+
+    if (!sendNowOption && (!hour12 || !minute || !period)) {
+        return interaction.reply({
+            content: "❌ Please provide hour, minute, and AM/PM, or use the `send-now` option.",
+            ephemeral: true
+        });
+    }
 
     const parsed = parseDate(dateInput);
     if (!parsed) {
@@ -146,15 +167,12 @@ async function execute(interaction) {
 
     const nextOccurrence = getNextOccurrence(day, month);
     const nextYear = nextOccurrence.getFullYear();
-    const cronExpr = `${minute} ${hour} ${day} ${month} *`;
-    const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-    const dateString = `${day}/${month}/${nextYear}`;
-    const message = generateBirthdayMessage(name);
-    const greetId = nextGreetId++;
-
     const thumbnailUrl = targetUser
         ? targetUser.displayAvatarURL({ extension: "png", size: 256 })
         : interaction.user.displayAvatarURL({ extension: "png", size: 256 });
+
+    const message = generateBirthdayMessage(name);
+    const greetId = nextGreetId++;
 
     const embed = new EmbedBuilder()
         .setColor(0xFFC0CB)
@@ -164,49 +182,69 @@ async function execute(interaction) {
         .setFooter({ text: `Greet ID: #${greetId}` })
         .setTimestamp();
 
-    const task = cron.schedule(cronExpr, async () => {
+    if (sendNowOption) {
+        // Send immediately
         const channel = await interaction.client.channels.fetch(interaction.channelId);
         if (channel) {
             await channel.send(`@everyone 🎉 It's ${name}'s Birthday! 🎉`);
             await channel.send({ embeds: [embed] });
         }
-    }, { scheduled: true });
 
-    const greeting = {
-        id: greetId,
-        user: name,
-        targetUserId: targetUser?.id || interaction.user.id,
-        message,
-        day,
-        month,
-        hour,
-        minute,
-        timeString,
-        originalYear: year,
-        nextYear,
-        cronExpr,
-        channelId: interaction.channelId,
-        requester: interaction.user.id,
-        requesterName: interaction.user.username,
-        createdAt: new Date().toISOString(),
-        task
-    };
-
-    scheduledGreetings.push(greeting);
-
-    const dmMessage = `✅ **Birthday greeting created!**\n\n🆔 **ID:** #${greetId}\n👤 **For:** ${name}\n📅 **Date:** ${dateString} (annual, auto-renews)\n⏰ **Time:** ${timeString}\n📢 **Mention:** @everyone\n\nUse \`/birthday-list\` to view all greetings.\nUse \`/birthday-delete id:${greetId}\` to remove this greeting.`;
-
-    try {
-        await interaction.user.send(dmMessage);
         await interaction.reply({
-            content: `✅ Birthday greeting scheduled for **${name}** on **${dateString}** at **${timeString}**! Check your DMs.`,
-            ephemeral: false
-        });
-    } catch (error) {
-        await interaction.reply({
-            content: dmMessage + "\n\n⚠️ (Couldn't DM you)",
+            content: `✅ Birthday greeting sent now for **${name}**!`,
             ephemeral: true
         });
+    } else {
+        // Schedule for later
+        const hour24 = period === "PM" && hour12 !== 12 ? hour12 + 12 : (period === "AM" && hour12 === 12 ? 0 : hour12);
+        const timeString = `${hour12}:${minute.toString().padStart(2, '0')} ${period}`;
+        const dateString = `${day}/${month}/${nextYear}`;
+        const cronExpr = `${minute} ${hour24} ${day} ${month} *`;
+
+        const task = cron.schedule(cronExpr, async () => {
+            const channel = await interaction.client.channels.fetch(interaction.channelId);
+            if (channel) {
+                await channel.send(`@everyone 🎉 It's ${name}'s Birthday! 🎉`);
+                await channel.send({ embeds: [embed] });
+            }
+        }, { scheduled: true });
+
+        const greeting = {
+            id: greetId,
+            user: name,
+            targetUserId: targetUser?.id || interaction.user.id,
+            message,
+            day,
+            month,
+            hour: hour24,
+            minute,
+            timeString,
+            originalYear: year,
+            nextYear,
+            cronExpr,
+            channelId: interaction.channelId,
+            requester: interaction.user.id,
+            requesterName: interaction.user.username,
+            createdAt: new Date().toISOString(),
+            task
+        };
+
+        scheduledGreetings.push(greeting);
+
+        const dmMessage = `✅ **Birthday greeting created!**\n\n🆔 **ID:** #${greetId}\n👤 **For:** ${name}\n📅 **Date:** ${dateString} (annual, auto-renews)\n⏰ **Time:** ${timeString}\n📢 **Mention:** @everyone\n\nUse \`/birthday-list\` to view all greetings.\nUse \`/birthday-delete id:${greetId}\` to remove this greeting.`;
+
+        try {
+            await interaction.user.send(dmMessage);
+            await interaction.reply({
+                content: `✅ Birthday greeting scheduled for **${name}** on **${dateString}** at **${timeString}**! Check your DMs.`,
+                ephemeral: true
+            });
+        } catch (error) {
+            await interaction.reply({
+                content: dmMessage + "\n\n⚠️ (Couldn't DM you)",
+                ephemeral: true
+            });
+        }
     }
 }
 
