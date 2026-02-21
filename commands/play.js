@@ -1,6 +1,8 @@
 import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
 import musicManager from '../managers/MusicManager.js';
 
+export const category = 'Music';
+
 export const data = new SlashCommandBuilder()
     .setName('play')
     .setDescription('Play a song in your voice channel')

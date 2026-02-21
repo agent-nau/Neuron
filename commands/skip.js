@@ -1,6 +1,8 @@
 import { SlashCommandBuilder } from 'discord.js';
 import musicManager from '../managers/MusicManager.js';
 
+export const category = 'Music';
+
 export const data = new SlashCommandBuilder()
     .setName('skip')
     .setDescription('Skip to the next song');

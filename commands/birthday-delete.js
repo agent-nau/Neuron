@@ -1,6 +1,8 @@
 import { SlashCommandBuilder } from "discord.js";
 import { scheduledGreetings } from "./birthday.js";
 
+export const category = "Utility";
+
 const data = new SlashCommandBuilder()
     .setName("birthday-delete")
     .setDescription("Delete a scheduled birthday greeting you created")

@@ -1,6 +1,8 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
 import { scheduledGreetings } from "./birthday.js";
 
+export const category = "Utility";
+
 const data = new SlashCommandBuilder()
     .setName("birthday-list")
     .setDescription("Show all scheduled birthday greetings with IDs");

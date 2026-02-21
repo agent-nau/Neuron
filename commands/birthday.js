@@ -1,7 +1,8 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
 import cron from "node-cron";
 
-// ✅ DEFINED here, not imported, to avoid circular dependencies with list and delete commands
+export const category = "Utility";
+
 export const scheduledGreetings = [];
 export let nextGreetId = 1;
 
