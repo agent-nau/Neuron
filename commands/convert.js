@@ -1,88 +1,122 @@
-// commands/convert.js
-import fs from "fs";
-import path from "path";
-import fetch from "node-fetch";
-import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
+import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 
-async function downloadFile(url, outputPath) {
-  const response = await fetch(url, {
-    headers: { "User-Agent": "DiscordBot/1.0" } // helps with some CDNs
-  });
-  if (!response.ok) {
-    throw new Error(`Download failed: ${response.status} ${response.statusText}`);
-  }
-  const buffer = await response.arrayBuffer();
-  fs.writeFileSync(outputPath, Buffer.from(buffer));
-  return outputPath;
-}
+export const category = "Utility";
 
-export const data = new SlashCommandBuilder()
-  .setName("convert")
-  .setDescription("Convert a YouTube video to MP3")
-  .addStringOption(option =>
-    option.setName("url")
-      .setDescription("YouTube video URL")
-      .setRequired(true)
-  );
+const data = new SlashCommandBuilder()
+    .setName('convert')
+    .setDescription('Convert YouTube video to MP3')
+    .addStringOption(option =>
+        option.setName('url')
+            .setDescription('YouTube video URL')
+            .setRequired(true));
 
-export async function execute(interaction) {
-  await interaction.deferReply();
+async function execute(interaction) {
+    const url = interaction.options.getString('url');
 
-  try {
-    const url = interaction.options.getString("url");
-    const videoIdMatch = url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
-    if (!videoIdMatch) {
-      return interaction.editReply("❌ Invalid YouTube URL.");
+    // Extract video ID
+    const match = url.match(/(?:v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/|youtube\.com\/watch\?v=)([a-zA-Z0-9_-]{11})/i);
+    const videoId = match ? match[1] : null;
+
+    if (!videoId) {
+        return interaction.reply({
+            content: '❌ Invalid YouTube URL.\nExamples:\n• `https://www.youtube.com/watch?v=UxxajLWwzqY`\n• `https://youtu.be/UxxajLWwzqY`',
+            ephemeral: true
+        });
     }
 
-    const videoId = videoIdMatch[1];
-    const apiUrl = `https://youtube-mp36.p.rapidapi.com/dl?id=${videoId}`;
-
-    const response = await fetch(apiUrl, {
-      headers: {
-        "X-RapidAPI-Key": process.env.RAPIDAPI_KEY,
-        "X-RapidAPI-Host": "youtube-mp36.p.rapidapi.com"
-      }
-    });
-
-    const data = await response.json();
-    console.log("API response:", data);
-
-    if (data.status !== "ok" || !data.link) {
-      return interaction.editReply(`⚠️ API error: ${data.msg || "No download link returned."}`);
-    }
-
-    const filename = `${videoId}.mp3`;
-    const tempFile = path.join("temp", filename);
+    await interaction.deferReply();
 
     try {
-      await downloadFile(data.link, tempFile);
-    } catch (err) {
-      return interaction.editReply(`⚠️ Could not download audio: ${err.message}`);
+        // Call RapidAPI
+        const apiUrl = `https://youtube-mp36.p.rapidapi.com/dl?id=${videoId}`;
+        
+        const apiResponse = await fetch(apiUrl, {
+            method: 'GET',
+            headers: {
+                'x-rapidapi-key': process.env.RAPIDAPI_KEY,
+                'x-rapidapi-host': 'youtube-mp36.p.rapidapi.com'
+            }
+        });
+
+        if (!apiResponse.ok) {
+            throw new Error(`API Error: ${apiResponse.status}`);
+        }
+
+        const data = await apiResponse.json();
+
+        if (data.status !== 'ok' || !data.link) {
+            return interaction.editReply({
+                content: `❌ ${data.msg || 'Failed to convert video'}`,
+                ephemeral: true
+            });
+        }
+
+        // Format duration
+        const durationMin = Math.floor(data.duration / 60);
+        const durationSec = Math.floor(data.duration % 60).toString().padStart(2, '0');
+        const fileSizeMB = (data.filesize / (1024 * 1024)).toFixed(2);
+
+        // Build embed
+        const embed = new EmbedBuilder()
+            .setTitle('🎵 YouTube to MP3')
+            .setDescription(`**${data.title}**`)
+            .setThumbnail(`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`)
+            .setColor(0xFF0000)
+            .addFields(
+                { 
+                    name: '⏱️ Duration', 
+                    value: `${durationMin}:${durationSec}`, 
+                    inline: true 
+                },
+                { 
+                    name: '💾 File Size', 
+                    value: `${fileSizeMB} MB`, 
+                    inline: true 
+                },
+                { 
+                    name: '✅ Status', 
+                    value: 'Ready for download', 
+                    inline: true 
+                }
+            )
+            .setFooter({ text: 'Powered by RapidAPI • Link expires in ~1 hour' })
+            .setTimestamp();
+
+        // Buttons - direct download link
+        const row = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+                .setLabel('⬇️ Download MP3')
+                .setStyle(ButtonStyle.Link)
+                .setURL(data.link),
+            new ButtonBuilder()
+                .setLabel('▶️ Watch on YouTube')
+                .setStyle(ButtonStyle.Link)
+                .setURL(`https://www.youtube.com/watch?v=${videoId}`)
+        );
+
+        await interaction.editReply({
+            embeds: [embed],
+            components: [row]
+        });
+
+    } catch (error) {
+        console.error('Convert error:', error);
+        
+        let errorMsg = '⚠️ Error converting video. Please try again later.';
+        if (error.message.includes('429')) {
+            errorMsg = '⏳ Rate limit reached. Please wait a minute.';
+        } else if (error.message.includes('403')) {
+            errorMsg = '🔒 Video is restricted or private.';
+        } else if (error.message.includes('404')) {
+            errorMsg = '❌ Video not found or API temporarily unavailable.';
+        }
+
+        await interaction.editReply({
+            content: errorMsg,
+            ephemeral: true
+        });
     }
-
-    // Build the embed
-    const embed = new EmbedBuilder()
-      .setTitle(data.title || "Converted Audio")
-      .setURL(url)
-      .setDescription("Here’s your converted MP3 file!")
-      .setThumbnail(data.thumb || "https://i.imgur.com/AfFp7pu.png") // fallback thumbnail
-      .addFields(
-        { name: "Duration", value: `${Math.floor(data.duration)}s`, inline: true },
-        { name: "File Size", value: `${(data.filesize / 1024 / 1024).toFixed(2)} MB`, inline: true }
-      )
-      .setColor(0x1DB954)
-      .setFooter({ text: "Powered by YouTube MP3 API" });
-
-    await interaction.editReply({
-      content: `✅ Converted: ${data.title}`,
-      embeds: [embed],   // must be array
-      files: [tempFile]  // only works if not ephemeral
-    });
-
-    fs.unlinkSync(tempFile); // cleanup
-  } catch (err) {
-    console.error("Convert command error:", err);
-    await interaction.editReply(`❌ Error: ${err.message}`);
-  }
 }
+
+export { data, execute };
+export default { category, data, execute };
