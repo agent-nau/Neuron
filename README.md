@@ -109,7 +109,7 @@
 
 | Command | Description | Usage | Permission |
 |:--------|:------------|:------|:-----------|
-| `/birthday date hour minute [user]` | Schedule birthday greeting with @everyone mention (auto-detects next occurrence) | `/birthday "February 22 2026" 9 0 @user` | — |
+| `/birthday user date [send_now] [hour] [minute]` | Schedule birthday greeting with @everyone mention (auto-detects next occurrence) | `/birthday @user "February 22 2026" send_now=True / 9 0 ` | — |
 | `/birthday-list` | View all scheduled birthdays via DM | `/birthday-list` | — |
 | `/birthday-delete id` | Delete a birthday greeting you created | `/birthday-delete 3` | — |
 | `/convert url` | Download YouTube audio | `/conver https://youtube.com/watch?v=...` | — |
