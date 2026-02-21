@@ -192,7 +192,7 @@ Native Fetch - Built-in HTTP requests (Node 18+)
 </b> 
 
 <p align="center">
-  <b>Distributed under the NDBLA License 1.0 See <a href="https://github.com/agent-nau/Neuron/blob/main/LICENSE">LICENSE</a> for more information.</b>
+  <b>Distributed under the <a href="https://github.com/agent-nau/Neuron/blob/main/LICENSE">NDBLA Licence 1.0</a></b>
 </p>
 
 ---
