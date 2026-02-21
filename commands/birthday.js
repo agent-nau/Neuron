@@ -1,25 +1,34 @@
-import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
+import { SlashCommandBuilder, EmbedBuilder, ChannelType, PermissionFlagsBits } from "discord.js";
 
 export const scheduledGreetings = [];
 export let nextGreetId = 1;
-export const category = 'Utility';
+export const category = "Utility";
+
+function getArticle(word) {
+    const vowels = ['a', 'e', 'i', 'o', 'u'];
+    const firstLetter = word.toLowerCase().charAt(0);
+    return vowels.includes(firstLetter) ? 'an' : 'a';
+}
 
 function generateBirthdayMessage(name = "friend") {
-    const adjectives = ["wonderful", "amazing", "fantastic", "incredible", "joyful", "magical"];
+    const adjectives = ["wonderful", "amazing", "fantastic", "incredible", "joyful", "magical", "awesome", "brilliant", "spectacular", "remarkable"];
     const wishes = [
         "May your day be filled with laughter, love, and unforgettable memories.",
         "Wishing you endless happiness and success in the year ahead.",
         "May this birthday mark the beginning of your best chapter yet.",
         "Celebrate big today and enjoy every single moment — you've earned it!",
-        "May your heart be full of joy and your life full of adventure."
+        "May your heart be full of joy and your life full of adventure.",
+        "Here's to another year of amazing achievements and beautiful moments.",
+        "May all your wishes come true on this special day!"
     ];
-    const emojis = ["🎂", "🎉", "🍰", "🌟", "💖", "🥳"];
+    const emojis = ["🎂", "🎉", "🍰", "🌟", "💖", "🥳", "🎈", "🎁", "✨", "💐"];
 
     const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
     const wish = wishes[Math.floor(Math.random() * wishes.length)];
     const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+    const article = getArticle(adj);
 
-    return `${emoji} Happy Birthday, ${name}! You are such a ${adj} person. ${wish}`;
+    return `${emoji} Happy Birthday, ${name}! You are such ${article} ${adj} person. ${wish}`;
 }
 
 function parseDate(dateString) {
@@ -105,6 +114,7 @@ const data = new SlashCommandBuilder()
 async function execute(interaction) {
     const targetUser = interaction.options.getUser("user");
     const name = targetUser.username;
+    const targetUserId = targetUser.id;
     const dateInput = interaction.options.getString("date");
     const sendNow = interaction.options.getBoolean("send_now") ?? false;
     const hour = interaction.options.getInteger("hour");
@@ -136,9 +146,7 @@ async function execute(interaction) {
         });
     }
 
-    const thumbnailUrl = targetUser.displayAvatarURL({ extension: "png", size: 256 });
-
-    // SEND NOW - sends embed only
+    // SEND NOW
     if (sendNow) {
         const birthdayMessage = generateBirthdayMessage(name);
         
@@ -146,20 +154,45 @@ async function execute(interaction) {
             .setColor(0xFFC0CB)
             .setTitle("🎂 Birthday Greeting 🎂")
             .setDescription(birthdayMessage)
-            .setThumbnail(thumbnailUrl)
+            .setThumbnail(targetUser.displayAvatarURL({ extension: "png", size: 256 }))
             .setTimestamp();
 
-        // Send embed with @everyone in content
-        await interaction.reply({
-            content: `@everyone 🎉 It's ${name}'s Birthday! 🎉`,
+        // Send with user mention in content, embed mentions user
+        const message = await interaction.channel.send({
+            content: `🎉 Happy Birthday <@${targetUserId}>! 🎉`,
             embeds: [embed],
-            allowedMentions: { parse: ['everyone'] }
+            allowedMentions: { users: [targetUserId] }
         });
+
+        // Create thread for greetings
+        const thread = await message.startThread({
+            name: `🎂 ${name}'s Birthday - ${day}/${month}/${year}`,
+            autoArchiveDuration: 1440, // 24 hours
+            reason: 'Birthday greetings thread'
+        });
+
+        // Send initial message in thread
+        await thread.send(`🎉 Drop your birthday wishes for <@${targetUserId}> here! 🎁\n\nThis thread will be deleted in 24 hours.`);
+
+        // Schedule thread deletion and lock after 24 hours
+        setTimeout(async () => {
+            try {
+                // Lock the thread
+                await thread.setLocked(true, 'Birthday over - thread locked');
+                // Delete the thread
+                await thread.delete('Birthday thread expired (24 hours)');
+            } catch (err) {
+                console.error('Failed to delete birthday thread:', err);
+            }
+        }, 24 * 60 * 60 * 1000); // 24 hours
+
+        // Silent reply (no visible message)
+        await interaction.reply({ content: '✅', ephemeral: true });
         
         return;
     }
 
-    // SCHEDULE - validate hour/minute
+    // SCHEDULE
     if (hour === null || minute === null) {
         return interaction.reply({
             content: "❌ Please provide both `hour` and `minute` to schedule, or use `send_now:True`!",
@@ -167,10 +200,8 @@ async function execute(interaction) {
         });
     }
 
-    // Build exact date for one-time schedule
     const scheduleDate = new Date(year, month - 1, day, hour, minute, 0);
     
-    // Check if date is in the past
     if (scheduleDate < new Date()) {
         return interaction.reply({
             content: "❌ That date and time is in the past! Please use a future date.",
@@ -182,29 +213,52 @@ async function execute(interaction) {
     const dateString = `${day}/${month}/${year}`;
     const greetId = nextGreetId++;
 
-    // ONE-TIME schedule using timeout
+    // Calculate when to delete thread (24 hours after send)
+    const threadDeleteTime = scheduleDate.getTime() + (24 * 60 * 60 * 1000);
+
     const delayMs = scheduleDate.getTime() - Date.now();
     
     const timeoutId = setTimeout(async () => {
         try {
             const channel = await interaction.client.channels.fetch(interaction.channelId);
-            if (channel) {
-                // FRESH embed created at send time
-                const freshMessage = generateBirthdayMessage(name);
-                
-                const embed = new EmbedBuilder()
-                    .setColor(0xFFC0CB)
-                    .setTitle("🎂 Birthday Greeting 🎂")
-                    .setDescription(freshMessage)
-                    .setThumbnail(thumbnailUrl)
-                    .setTimestamp();
+            if (!channel) return;
 
-                // Single message with @everyone + embed
-                await channel.send({
-                    content: `@everyone 🎉 It's ${name}'s Birthday! 🎉`,
-                    embeds: [embed]
-                });
-            }
+            const freshMessage = generateBirthdayMessage(name);
+            
+            const embed = new EmbedBuilder()
+                .setColor(0xFFC0CB)
+                .setTitle("🎂 Birthday Greeting 🎂")
+                .setDescription(freshMessage)
+                .setThumbnail(targetUser.displayAvatarURL({ extension: "png", size: 256 }))
+                .setTimestamp();
+
+            // Send with user mention
+            const message = await channel.send({
+                content: `🎉 Happy Birthday <@${targetUserId}>! 🎉`,
+                embeds: [embed],
+                allowedMentions: { users: [targetUserId] }
+            });
+
+            // Create thread
+            const thread = await message.startThread({
+                name: `🎂 ${name}'s Birthday - ${day}/${month}/${year}`,
+                autoArchiveDuration: 1440,
+                reason: 'Birthday greetings thread'
+            });
+
+            await thread.send(`🎉 Drop your birthday wishes for <@${targetUserId}> here! 🎁\n\nThis thread will be deleted in 24 hours.`);
+
+            // Schedule thread deletion after 24 hours
+            const deleteDelay = threadDeleteTime - Date.now();
+            setTimeout(async () => {
+                try {
+                    await thread.setLocked(true, 'Birthday over - thread locked');
+                    await thread.delete('Birthday thread expired (24 hours)');
+                } catch (err) {
+                    console.error('Failed to delete scheduled birthday thread:', err);
+                }
+            }, Math.max(deleteDelay, 0));
+
         } catch (err) {
             console.error('Birthday send failed:', err);
         }
@@ -215,11 +269,10 @@ async function execute(interaction) {
         
     }, delayMs);
 
-    // Store greeting data
     const greeting = {
         id: greetId,
         user: name,
-        targetUserId: targetUser.id,
+        targetUserId,
         day,
         month,
         year,
@@ -232,22 +285,17 @@ async function execute(interaction) {
         requesterName: interaction.user.username,
         createdAt: new Date().toISOString(),
         timeoutId,
-        sendAt: scheduleDate.toISOString()
+        sendAt: scheduleDate.toISOString(),
+        threadDeleteAt: new Date(threadDeleteTime).toISOString()
     };
 
     scheduledGreetings.push(greeting);
 
-    const dmMessage = `✅ **Birthday scheduled! (ONE-TIME)**\n\n🆔 **ID:** #${greetId}\n👤 **For:** ${name}\n📅 **Date:** ${dateString}\n⏰ **Time:** ${timeString}\n\nUse \`/birthday-delete id:${greetId}\` to cancel.`;
-
-    try {
-        await interaction.user.send(dmMessage);
-        await interaction.reply({
-            content: `✅ Scheduled for **${name}** on **${dateString}** at **${timeString}**! Check DMs.`,
-            ephemeral: false
-        });
-    } catch {
-        await interaction.reply({ content: dmMessage, ephemeral: true });
-    }
+    // Silent confirmation (no visible reply)
+    await interaction.reply({ 
+        content: `✅ Scheduled for **${name}** on **${dateString}** at **${timeString}**!`,
+        ephemeral: true 
+    });
 }
 
 export { data, execute };
