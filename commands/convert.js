@@ -5,7 +5,9 @@ import fetch from "node-fetch";
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
 
 async function downloadFile(url, outputPath) {
-  const response = await fetch(url);
+  const response = await fetch(url, {
+    headers: { "User-Agent": "DiscordBot/1.0" } // helps with some CDNs
+  });
   if (!response.ok) {
     throw new Error(`Download failed: ${response.status} ${response.statusText}`);
   }
@@ -64,7 +66,7 @@ export async function execute(interaction) {
       .setTitle(data.title || "Converted Audio")
       .setURL(url)
       .setDescription("Here’s your converted MP3 file!")
-      .setThumbnail(data.thumb || null) // may be undefined
+      .setThumbnail(data.thumb || "https://i.imgur.com/AfFp7pu.png") // fallback thumbnail
       .addFields(
         { name: "Duration", value: `${Math.floor(data.duration)}s`, inline: true },
         { name: "File Size", value: `${(data.filesize / 1024 / 1024).toFixed(2)} MB`, inline: true }
@@ -74,8 +76,8 @@ export async function execute(interaction) {
 
     await interaction.editReply({
       content: `✅ Converted: ${data.title}`,
-      embeds: [embed],
-      files: [tempFile]
+      embeds: [embed],   // must be array
+      files: [tempFile]  // only works if not ephemeral
     });
 
     fs.unlinkSync(tempFile); // cleanup
