@@ -106,8 +106,9 @@
 
 | Command | Description | Usage | Permission |
 |:--------|:------------|:------|:-----------|
-| `/birthday user mode date` | Send/schedule birthday wishes | `/birthday @user schedule 0 9 * * *` | — |
-| `/birthday-list` | View all scheduled birthdays | `/birthday-list` | — |
+| `/birthday day month [year] [user]` | Schedule birthday greeting | `/birthday 15 6 2025 @user` | — |
+| `/birthday-list` | View all scheduled birthdays (DM) | `/birthday-list` | — |
+| `/birthday-delete id` | Delete your birthday greeting | `/birthday-delete 3` | — |
 | `/convert format url` | Download YouTube audio/video | `/convert mp3 <url>` | — |
 | `/serverinfo` | Display server statistics | `/serverinfo` | — |
 | `/embed` | Create custom rich embeds | `/embed` | ManageMessages |
