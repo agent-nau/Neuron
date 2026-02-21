@@ -129,7 +129,7 @@ async function execute(interaction) {
         // Public confirmation (without details)
         await interaction.reply({
             content: `✅ Birthday greeting scheduled! Check your DMs for details.`,
-            ephemeral: false // Public
+            ephemeral: true 
         });
     } catch (error) {
         // If DMs are closed, use ephemeral reply
