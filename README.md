@@ -131,12 +131,6 @@
  
 ---
 
-<b>
-<p align="center">
-   🛠️ Tech Stack
-</p>
-</b>
-
 <p align="center">
   <img src="https://img.shields.io/badge/Discord.js-5865F2?style=flat-square&logo=discord&logoColor=white" />
   <img src="https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=nodedotjs&logoColor=white" />
@@ -172,41 +166,6 @@ Native Fetch - Built-in HTTP requests (Node 18+)
 
 ---
 
-<b>
-<p align="center">
- 🤝 Contributing
-</p>
-</b>
- 
-<b>
-<p align="center">
-Contributions are welcome! Please follow these steps: Fork the repository
-</p>
-</b>
-
-<b>
-<p align="center">
-Create a feature branch (git checkout -b feature/amazing-feature)
-</p>
-</b>
-
-<b>
-<p align="center">
-Commit your changes (git commit -m 'Add amazing feature')
-</p>
-</b>
-
-<b>
-<p align="center">
-Push to the branch (git push origin feature/amazing-feature)
-</p>
-</b>
-
-<b>
-<p align="center">
-Open a Pull Request</b>
-
----
 
 <b>
 <p align="center">
