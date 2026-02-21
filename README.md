@@ -106,6 +106,7 @@
 
 | Command | Description | Usage | Permission |
 |:--------|:------------|:------|:-----------|
+<<<<<<< HEAD
 | `/birthday date hour minute [user]` | Schedule birthday greeting with @everyone mention (auto-detects next occurrence) | `/birthday "February 22 2026" 9 0 @user` | — |
 | `/birthday-list` | View all scheduled birthdays via DM | `/birthday-list` | — |
 | `/birthday-delete id` | Delete a birthday greeting you created | `/birthday-delete 3` | — |
@@ -116,6 +117,18 @@
 | `/ping` | Check bot latency and API response time | `/ping` | — |
 | `/invite` | Get bot invite link for your server | `/invite` | — |
 | `/help` | Display full help menu with all commands | `/help` | — |
+=======
+| `/birthday day month [year] [user]` | Schedule birthday greeting | `/birthday 15 6 2025 @user` | — |
+| `/birthday-list` | View all scheduled birthdays (DM) | `/birthday-list` | — |
+| `/birthday-delete id` | Delete your birthday greeting | `/birthday-delete 3` | — |
+| `/convert format url` | Download YouTube audio/video | `/convert mp3 <url>` | — |
+| `/serverinfo` | Display server statistics | `/serverinfo` | — |
+| `/embed` | Create custom rich embeds | `/embed` | ManageMessages |
+| `/say message` | Make bot say something | `/say Hello everyone!` | ManageMessages |
+| `/ping` | Check bot latency | `/ping` | — |
+| `/invite` | Get bot invite link | `/invite` | — |
+| `/help` | Display help menu | `/help` | — |
+>>>>>>> c2a711803d7d495b2ab9266566eaf5e648eb3483
 
 </div>
 
@@ -131,12 +144,6 @@
 </div>
  
 ---
-
-<b>
-<p align="center">
-   🛠️ Tech Stack
-</p>
-</b>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Discord.js-5865F2?style=flat-square&logo=discord&logoColor=white" />
@@ -173,41 +180,6 @@ Native Fetch - Built-in HTTP requests (Node 18+)
 
 ---
 
-<b>
-<p align="center">
- 🤝 Contributing
-</p>
-</b>
- 
-<b>
-<p align="center">
-Contributions are welcome! Please follow these steps: Fork the repository
-</p>
-</b>
-
-<b>
-<p align="center">
-Create a feature branch (git checkout -b feature/amazing-feature)
-</p>
-</b>
-
-<b>
-<p align="center">
-Commit your changes (git commit -m 'Add amazing feature')
-</p>
-</b>
-
-<b>
-<p align="center">
-Push to the branch (git push origin feature/amazing-feature)
-</p>
-</b>
-
-<b>
-<p align="center">
-Open a Pull Request</b>
-
----
 
 <b>
 <p align="center">

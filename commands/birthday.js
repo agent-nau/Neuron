@@ -226,8 +226,13 @@ async function execute(interaction) {
     try {
         await interaction.user.send(dmMessage);
         await interaction.reply({
+<<<<<<< HEAD
             content: `✅ Birthday greeting scheduled for **${name}** on **${dateString}** at **${timeString}**! Check your DMs.`,
             ephemeral: true
+=======
+            content: `✅ Birthday greeting scheduled! Check your DMs for details.`,
+            ephemeral: true 
+>>>>>>> c2a711803d7d495b2ab9266566eaf5e648eb3483
         });
     } catch (error) {
         await interaction.reply({
