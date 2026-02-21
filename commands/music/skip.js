@@ -1,25 +1,21 @@
-const { SlashCommandBuilder } = require('discord.js');
-const musicManager = require('../../managers/MusicManager');
+import { SlashCommandBuilder } from 'discord.js';
+import musicManager from '../../managers/MusicManager.js';
 
-export const category = 'Music';
+export const data = new SlashCommandBuilder()
+    .setName('skip')
+    .setDescription('Skip to the next song');
 
-module.exports = {
-    data: new SlashCommandBuilder()
-        .setName('skip')
-        .setDescription('Skip to the next song'),
+export async function execute(interaction) {
+    const voiceChannel = interaction.member.voice.channel;
+    const botChannel = interaction.guild.members.me.voice.channel;
+    
+    if (!voiceChannel || (botChannel && voiceChannel.id !== botChannel.id)) {
+        return interaction.reply({ 
+            content: '❌ You need to be in the same voice channel as me!', 
+            ephemeral: true 
+        });
+    }
 
-    async execute(interaction) {
-        const voiceChannel = interaction.member.voice.channel;
-        const botChannel = interaction.guild.members.me.voice.channel;
-        
-        if (!voiceChannel || (botChannel && voiceChannel.id !== botChannel.id)) {
-            return interaction.reply({ 
-                content: '❌ You need to be in the same voice channel as me!', 
-                ephemeral: true 
-            });
-        }
-
-        musicManager.playNext(interaction.guild.id, interaction.channel);
-        await interaction.reply('⏭️ Skipped to the next song!');
-    },
-};
+    musicManager.playNext(interaction.guild.id, interaction.channel);
+    await interaction.reply('⏭️ Skipped to the next song!');
+}

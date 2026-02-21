@@ -1,22 +1,18 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const musicManager = require('../../managers/MusicManager');
+import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
+import musicManager from '../../managers/MusicManager.js';
 
-export const category = 'Music';
+export const data = new SlashCommandBuilder()
+    .setName('queue')
+    .setDescription('Show the current music queue');
 
-module.exports = {
-    data: new SlashCommandBuilder()
-        .setName('queue')
-        .setDescription('Show the current music queue'),
+export async function execute(interaction) {
+    const queueList = musicManager.getQueueList(interaction.guild.id);
+    
+    const embed = new EmbedBuilder()
+        .setTitle('🎵 Music Queue')
+        .setDescription(queueList)
+        .setColor('#FFA500')
+        .setTimestamp();
 
-    async execute(interaction) {
-        const queueList = musicManager.getQueueList(interaction.guild.id);
-        
-        const embed = new EmbedBuilder()
-            .setTitle('🎵 Music Queue')
-            .setDescription(queueList)
-            .setColor('#FFA500')
-            .setTimestamp();
-
-        await interaction.reply({ embeds: [embed] });
-    },
-};
+    await interaction.reply({ embeds: [embed] });
+}

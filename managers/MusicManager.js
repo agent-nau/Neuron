@@ -1,92 +1,323 @@
-import { Events, EmbedBuilder } from 'discord.js';
-import musicManager from '../managers/MusicManager.js';
+import { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, VoiceConnectionStatus } from '@discordjs/voice';
+import play from 'play-dl';
+import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 
-export default {
-    name: Events.InteractionCreate,
-    async execute(interaction) {
-        if (!interaction.isButton()) return;
-        if (!interaction.customId.startsWith('music_')) return;
+class MusicManager {
+    constructor() {
+        this.queues = new Map();
+        this.players = new Map();
+        this.connections = new Map();
+    }
 
-        const action = interaction.customId.replace('music_', '');
-        const guildId = interaction.guild.id;
-        const queue = musicManager.getQueue(guildId);
-
-        // Check if user is in same voice channel
-        const voiceChannel = interaction.member.voice.channel;
-        const botChannel = interaction.guild.members.me.voice.channel;
-
-        if (!voiceChannel) {
-            return interaction.reply({
-                content: '❌ You need to be in a voice channel!',
-                ephemeral: true
+    getQueue(guildId) {
+        if (!this.queues.has(guildId)) {
+            this.queues.set(guildId, {
+                songs: [],
+                currentIndex: 0,
+                playing: false,
+                loop: false,
+                volume: 100,
+                currentMessage: null,
+                history: []
             });
         }
+        return this.queues.get(guildId);
+    }
 
-        if (botChannel && voiceChannel.id !== botChannel.id) {
-            return interaction.reply({
-                content: '❌ You need to be in the same voice channel as me!',
-                ephemeral: true
-            });
+    async play(guildId, channel, voiceChannel, query, requester) {
+        const queue = this.getQueue(guildId);
+        
+        const searchResult = await play.search(query, { limit: 1 });
+        if (!searchResult.length) return null;
+        
+        const video = searchResult[0];
+        const song = {
+            title: video.title,
+            url: video.url,
+            duration: video.durationRaw,
+            durationSec: video.durationInSec,
+            thumbnail: video.thumbnails[0]?.url,
+            author: video.channel?.name,
+            requester: requester
+        };
+
+        queue.songs.push(song);
+
+        if (!queue.playing && !this.players.has(guildId)) {
+            await this.connectAndPlay(guildId, voiceChannel, channel);
+        } else {
+            if (queue.currentMessage) {
+                await this.updateNowPlaying(guildId, channel, false);
+            }
         }
 
-        await interaction.deferUpdate();
+        return song;
+    }
 
-        switch (action) {
-            case 'pause': {
-                const paused = musicManager.pause(guildId);
-                if (paused) {
-                    await musicManager.updateNowPlaying(guildId, interaction.channel, true);
-                    await interaction.followUp({
-                        content: '⏸️ Paused the music',
-                        ephemeral: true
-                    });
-                }
-                break;
+    async connectAndPlay(guildId, voiceChannel, textChannel) {
+        const queue = this.getQueue(guildId);
+
+        const connection = joinVoiceChannel({
+            channelId: voiceChannel.id,
+            guildId: voiceChannel.guild.id,
+            adapterCreator: voiceChannel.guild.voiceAdapterCreator,
+        });
+
+        this.connections.set(guildId, connection);
+
+        const player = createAudioPlayer();
+        this.players.set(guildId, player);
+
+        connection.subscribe(player);
+
+        connection.on(VoiceConnectionStatus.Disconnected, () => {
+            this.cleanup(guildId);
+        });
+
+        player.on(AudioPlayerStatus.Idle, () => {
+            this.handleSongEnd(guildId, textChannel);
+        });
+
+        player.on('error', error => {
+            console.error('Audio player error:', error);
+            textChannel.send('❌ Error playing audio. Skipping...');
+            this.playNext(guildId, textChannel);
+        });
+
+        await this.playSong(guildId, textChannel);
+    }
+
+    async playSong(guildId, textChannel) {
+        const queue = this.getQueue(guildId);
+        const player = this.players.get(guildId);
+
+        if (!queue.songs.length || queue.currentIndex >= queue.songs.length) {
+            if (queue.loop && queue.songs.length) {
+                queue.currentIndex = 0;
+            } else {
+                this.cleanup(guildId);
+                textChannel.send('✅ Queue finished!');
+                return;
             }
-            
-            case 'resume': {
-                const resumed = musicManager.resume(guildId);
-                if (resumed) {
-                    await musicManager.updateNowPlaying(guildId, interaction.channel, false);
-                    await interaction.followUp({
-                        content: '▶️ Resumed the music',
-                        ephemeral: true
-                    });
-                }
-                break;
-            }
-            
-            case 'skip':
-                musicManager.playNext(guildId, interaction.channel);
-                await interaction.followUp({
-                    content: '⏭️ Skipped to the next song',
-                    ephemeral: true
-                });
-                break;
+        }
 
-            case 'stop':
-                musicManager.stop(guildId);
-                await interaction.followUp({
-                    content: '⏹️ Stopped the music and cleared the queue',
-                    ephemeral: true
-                });
-                break;
+        const song = queue.songs[queue.currentIndex];
+        
+        try {
+            const stream = await play.stream(song.url);
+            const resource = createAudioResource(stream.stream, {
+                inputType: stream.type
+            });
 
-            case 'queue': {
-                const queueList = musicManager.getQueueList(guildId);
+            player.play(resource);
+            queue.playing = true;
 
-                const embed = new EmbedBuilder()
-                    .setTitle('🎵 Music Queue')
-                    .setDescription(queueList)
-                    .setColor('#FFA500')
-                    .setTimestamp();
-
-                await interaction.followUp({
-                    embeds: [embed],  // Fixed: was \[embed\]
-                    ephemeral: true
-                });
-                break;
-            }
+            await this.sendNowPlaying(textChannel, song, queue, guildId);
+        } catch (error) {
+            console.error('Play error:', error);
+            textChannel.send('❌ Error loading song. Skipping...');
+            this.playNext(guildId, textChannel);
         }
     }
-};
+
+    async sendNowPlaying(channel, song, queue, guildId) {
+        if (queue.currentMessage) {
+            try {
+                await queue.currentMessage.delete();
+            } catch (e) {}
+        }
+
+        const embed = new EmbedBuilder()
+            .setAuthor({ 
+                name: '|  Now playing', 
+                iconURL: song.requester.displayAvatarURL({ dynamic: true }) 
+            })
+            .setDescription(`**[${song.title}](${song.url})**`)
+            .addFields(
+                { name: 'Artist', value: song.author || 'Unknown', inline: true },
+                { name: 'Duration', value: song.duration || 'Unknown', inline: true },
+                { name: 'Requested by', value: `<@${song.requester.id}>`, inline: true }
+            )
+            .setThumbnail(song.thumbnail || null)
+            .setColor('#FFA500')
+            .setTimestamp();
+
+        const row = new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId('music_pause')
+                    .setLabel('Pause & Resume')
+                    .setStyle(ButtonStyle.Success),
+                new ButtonBuilder()
+                    .setCustomId('music_skip')
+                    .setLabel('Skip')
+                    .setStyle(ButtonStyle.Primary),
+                new ButtonBuilder()
+                    .setCustomId('music_stop')
+                    .setLabel('Stop')
+                    .setStyle(ButtonStyle.Danger),
+                new ButtonBuilder()
+                    .setCustomId('music_queue')
+                    .setLabel('Show Queue')
+                    .setStyle(ButtonStyle.Secondary)
+            );
+
+        const msg = await channel.send({ embeds: [embed], components: [row] });
+        queue.currentMessage = msg;
+    }
+
+    async updateNowPlaying(guildId, channel, isPaused) {
+        const queue = this.getQueue(guildId);
+        if (!queue.currentMessage || !queue.songs[queue.currentIndex]) return;
+
+        const song = queue.songs[queue.currentIndex];
+        
+        const embed = new EmbedBuilder()
+            .setAuthor({ 
+                name: '|  Now playing', 
+                iconURL: song.requester.displayAvatarURL({ dynamic: true }) 
+            })
+            .setDescription(`**[${song.title}](${song.url})**`)
+            .addFields(
+                { name: 'Artist', value: song.author || 'Unknown', inline: true },
+                { name: 'Duration', value: song.duration || 'Unknown', inline: true },
+                { name: 'Requested by', value: `<@${song.requester.id}>`, inline: true },
+                { name: 'Status', value: isPaused ? '⏸️ Paused' : '▶️ Playing', inline: true }
+            )
+            .setThumbnail(song.thumbnail || null)
+            .setColor('#FFA500')
+            .setTimestamp();
+
+        const row = new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId(isPaused ? 'music_resume' : 'music_pause')
+                    .setLabel(isPaused ? 'Resume' : 'Pause & Resume')
+                    .setStyle(ButtonStyle.Success),
+                new ButtonBuilder()
+                    .setCustomId('music_skip')
+                    .setLabel('Skip')
+                    .setStyle(ButtonStyle.Primary),
+                new ButtonBuilder()
+                    .setCustomId('music_stop')
+                    .setLabel('Stop')
+                    .setStyle(ButtonStyle.Danger),
+                new ButtonBuilder()
+                    .setCustomId('music_queue')
+                    .setLabel('Show Queue')
+                    .setStyle(ButtonStyle.Secondary)
+            );
+
+        await queue.currentMessage.edit({ embeds: [embed], components: [row] });
+    }
+
+    handleSongEnd(guildId, textChannel) {
+        const queue = this.getQueue(guildId);
+        
+        if (queue.songs[queue.currentIndex]) {
+            queue.history.push(queue.songs[queue.currentIndex]);
+        }
+
+        queue.currentIndex++;
+        
+        if (queue.currentIndex < queue.songs.length) {
+            this.playSong(guildId, textChannel);
+        } else if (queue.loop) {
+            queue.currentIndex = 0;
+            this.playSong(guildId, textChannel);
+        } else {
+            this.cleanup(guildId);
+            textChannel.send('✅ Finished playing all songs!');
+        }
+    }
+
+    playNext(guildId, textChannel) {
+        const player = this.players.get(guildId);
+        if (player) {
+            player.stop();
+        }
+    }
+
+    playPrevious(guildId, textChannel) {
+        const queue = this.getQueue(guildId);
+        
+        if (queue.history.length > 0) {
+            const prevSong = queue.history.pop();
+            queue.songs.splice(queue.currentIndex, 0, prevSong);
+            queue.currentIndex--;
+            this.playNext(guildId, textChannel);
+            return true;
+        }
+        return false;
+    }
+
+    pause(guildId) {
+        const player = this.players.get(guildId);
+        const queue = this.getQueue(guildId);
+        if (player && queue.playing) {
+            player.pause();
+            queue.playing = false;
+            return true;
+        }
+        return false;
+    }
+
+    resume(guildId) {
+        const player = this.players.get(guildId);
+        const queue = this.getQueue(guildId);
+        if (player && !queue.playing) {
+            player.unpause();
+            queue.playing = true;
+            return true;
+        }
+        return false;
+    }
+
+    stop(guildId) {
+        const queue = this.getQueue(guildId);
+        if (queue.currentMessage) {
+            queue.currentMessage.delete().catch(() => {});
+        }
+        this.cleanup(guildId);
+    }
+
+    getQueueList(guildId) {
+        const queue = this.getQueue(guildId);
+        const current = queue.songs[queue.currentIndex];
+        
+        let description = '';
+        if (current) {
+            description += `**Now Playing:**\n[${current.title}](${current.url}) | \`${current.duration}\` | <@${current.requester.id}>\n\n`;
+        }
+        
+        const upcoming = queue.songs.slice(queue.currentIndex + 1, queue.currentIndex + 11);
+        if (upcoming.length) {
+            description += `**Upcoming (${upcoming.length} songs):**\n`;
+            upcoming.forEach((song, i) => {
+                description += `${i + 1}. [${song.title}](${song.url}) | \`${song.duration}\` | <@${song.requester.id}>\n`;
+            });
+        } else {
+            description += '*No upcoming songs*';
+        }
+        
+        return description;
+    }
+
+    cleanup(guildId) {
+        const connection = this.connections.get(guildId);
+        const player = this.players.get(guildId);
+        
+        if (connection) {
+            connection.destroy();
+            this.connections.delete(guildId);
+        }
+        if (player) {
+            player.stop();
+            this.players.delete(guildId);
+        }
+        
+        this.queues.delete(guildId);
+    }
+}
+
+export default new MusicManager();
