@@ -19,7 +19,7 @@ async function execute(interaction) {
     if (index === -1) {
         try {
             await interaction.user.send(`❌ Greeting #${greetId} not found.`);
-            return interaction.reply({ content: "📬 Check your DMs!", ephemeral: false });
+            return interaction.reply({ content: "📬 Check your DMs!", ephemeral: true });
         } catch {
             return interaction.reply({ content: `❌ Greeting #${greetId} not found.`, ephemeral: true });
         }
@@ -30,7 +30,7 @@ async function execute(interaction) {
     if (greeting.requester !== interaction.user.id) {
         try {
             await interaction.user.send(`❌ You can only delete your own greetings.`);
-            return interaction.reply({ content: "📬 Check your DMs!", ephemeral: false });
+            return interaction.reply({ content: "📬 Check your DMs!", ephemeral: true });
         } catch {
             return interaction.reply({ content: `❌ You can only delete your own greetings.`, ephemeral: true });
         }
@@ -47,7 +47,7 @@ async function execute(interaction) {
 
     try {
         await interaction.user.send(dmMessage);
-        await interaction.reply({ content: "✅ Deleted! Check your DMs!", ephemeral: false });
+        await interaction.reply({ content: "✅ Deleted! Check your DMs!", ephemeral: true });
     } catch {
         await interaction.reply({ content: dmMessage, ephemeral: true });
     }

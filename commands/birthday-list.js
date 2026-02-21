@@ -1,8 +1,6 @@
 import { SlashCommandBuilder } from "discord.js";
 import { scheduledGreetings } from "./birthday.js";
 
-export const category = "Utility";
-
 const data = new SlashCommandBuilder()
     .setName("birthday-delete")
     .setDescription("Delete a scheduled birthday greeting you created")
@@ -36,7 +34,7 @@ async function execute(interaction) {
         }
     }
 
-    // Cancel the timeout (one-time schedule)
+    // Cancel the timeout
     if (greeting.timeoutId) {
         clearTimeout(greeting.timeoutId);
     }
