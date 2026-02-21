@@ -1,86 +1,120 @@
-import { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder } from 'discord.js';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 
 export const category = "Utility";
 
-// Auto-create temp directory if it doesn't exist
-const tempDir = path.join(__dirname, '..', 'temp');
-if (!fs.existsSync(tempDir)) {
-    fs.mkdirSync(tempDir, { recursive: true });
-}
-
 const data = new SlashCommandBuilder()
     .setName('convert')
-    .setDescription('Download YouTube audio/video')
-    .addStringOption(option =>
-        option.setName('format')
-            .setDescription('Format (mp3, videos, mergedstreams, videostreams, audiostreams)')
-            .setRequired(true))
+    .setDescription('Convert YouTube video to MP3')
     .addStringOption(option =>
         option.setName('url')
             .setDescription('YouTube video URL')
             .setRequired(true));
 
-async function downloadFile(url, outputPath) {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`Download failed: ${response.status}`);
-    
-    const buffer = await response.arrayBuffer();
-    fs.writeFileSync(outputPath, Buffer.from(buffer));
-    
-    return outputPath;
-}
-
 async function execute(interaction) {
     const url = interaction.options.getString('url');
 
-    // Extract video ID from URL
-    const match = url.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    // Extract video ID
+    const match = url.match(/(?:v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/|youtube\.com\/watch\?v=)([a-zA-Z0-9_-]{11})/i);
     const videoId = match ? match[1] : null;
 
     if (!videoId) {
-        return interaction.reply('❌ Invalid YouTube URL.');
+        return interaction.reply({
+            content: '❌ Invalid YouTube URL.\nExamples:\n• `https://www.youtube.com/watch?v=UxxajLWwzqY`\n• `https://youtu.be/UxxajLWwzqY`',
+            ephemeral: true
+        });
     }
 
-    try {
-        const res = await fetch(
-            `https://api.download-lagu-mp3.com/@api/json/${format}/${videoId}`
-        );
-        const data = await res.json();
+    await interaction.deferReply();
 
-        if (!data || !data.link) {
-            return interaction.reply('❌ Could not fetch download link. Please check the format and video ID.');
+    try {
+        // Call RapidAPI
+        const apiUrl = `https://youtube-mp36.p.rapidapi.com/dl?id=${videoId}`;
+        
+        const apiResponse = await fetch(apiUrl, {
+            method: 'GET',
+            headers: {
+                'x-rapidapi-key': process.env.RAPIDAPI_KEY,
+                'x-rapidapi-host': 'youtube-mp36.p.rapidapi.com'
+            }
+        });
+
+        if (!apiResponse.ok) {
+            throw new Error(`API Error: ${apiResponse.status}`);
         }
+
+        const data = await apiResponse.json();
+
+        if (data.status !== 'ok' || !data.link) {
+            return interaction.editReply({
+                content: `❌ ${data.msg || 'Failed to convert video'}`,
+                ephemeral: true
+            });
+        }
+
+        // Format duration
+        const durationMin = Math.floor(data.duration / 60);
+        const durationSec = Math.floor(data.duration % 60).toString().padStart(2, '0');
+        const fileSizeMB = (data.filesize / (1024 * 1024)).toFixed(2);
 
         // Build embed
         const embed = new EmbedBuilder()
-            .setTitle(data.title || 'YouTube Video')
-            .setURL(`https://www.youtube.com/watch?v=${videoId}`)
-            .setDescription(data.info || 'Here is your requested video/audio.')
+            .setTitle('🎵 YouTube to MP3')
+            .setDescription(`**${data.title}**`)
             .setThumbnail(`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`)
-            .setColor(0xff0000);
+            .setColor(0xFF0000)
+            .addFields(
+                { 
+                    name: '⏱️ Duration', 
+                    value: `${durationMin}:${durationSec}`, 
+                    inline: true 
+                },
+                { 
+                    name: '💾 File Size', 
+                    value: `${fileSizeMB} MB`, 
+                    inline: true 
+                },
+                { 
+                    name: '✅ Status', 
+                    value: 'Ready for download', 
+                    inline: true 
+                }
+            )
+            .setFooter({ text: 'Powered by RapidAPI • Link expires in ~1 hour' })
+            .setTimestamp();
 
-        // Buttons
+        // Buttons - direct download link
         const row = new ActionRowBuilder().addComponents(
             new ButtonBuilder()
-                .setLabel('Watch on YouTube')
+                .setLabel('⬇️ Download MP3')
                 .setStyle(ButtonStyle.Link)
-                .setURL(`https://www.youtube.com/watch?v=${videoId}`),
+                .setURL(data.link),
             new ButtonBuilder()
-                .setLabel('Download')
+                .setLabel('▶️ Watch on YouTube')
                 .setStyle(ButtonStyle.Link)
-                .setURL(data.link)
+                .setURL(`https://www.youtube.com/watch?v=${videoId}`)
         );
 
-        await interaction.reply({ embeds: [embed], components: [row] });
-    } catch (err) {
-        console.error(err);
-        await interaction.reply('⚠️ Error fetching the download link.');
+        await interaction.editReply({
+            embeds: [embed],
+            components: [row]
+        });
+
+    } catch (error) {
+        console.error('Convert error:', error);
+        
+        let errorMsg = '⚠️ Error converting video. Please try again later.';
+        if (error.message.includes('429')) {
+            errorMsg = '⏳ Rate limit reached. Please wait a minute.';
+        } else if (error.message.includes('403')) {
+            errorMsg = '🔒 Video is restricted or private.';
+        } else if (error.message.includes('404')) {
+            errorMsg = '❌ Video not found or API temporarily unavailable.';
+        }
+
+        await interaction.editReply({
+            content: errorMsg,
+            ephemeral: true
+        });
     }
 }
 
