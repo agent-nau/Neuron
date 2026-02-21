@@ -1,4 +1,4 @@
-import { Events, EmbedBuilder } from ('discord.js');
+import { Events, EmbedBuilder } from 'discord.js';
 const musicManager = require('../managers/MusicManager');
 
 export default {
