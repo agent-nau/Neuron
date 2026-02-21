@@ -19,6 +19,7 @@ export async function execute(client) {
   const statuses = [
     { name: "Made by Lecs @ Vecs Corp.", type: ActivityType.Playing },
     { name: "/help for commands", type: ActivityType.Listening },
+    { name: "protected ${client.guilds.cache.size} servers", type: ActivityType.Watching },
   ];
 
   let i = 0;

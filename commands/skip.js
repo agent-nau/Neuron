@@ -1,9 +1,9 @@
 import { SlashCommandBuilder } from 'discord.js';
-import musicManager from '../../managers/MusicManager.js';
+import musicManager from '../managers/MusicManager.js';
 
 export const data = new SlashCommandBuilder()
-    .setName('stop')
-    .setDescription('Stop playing and clear the queue');
+    .setName('skip')
+    .setDescription('Skip to the next song');
 
 export async function execute(interaction) {
     const voiceChannel = interaction.member.voice.channel;
@@ -16,6 +16,6 @@ export async function execute(interaction) {
         });
     }
 
-    musicManager.stop(interaction.guild.id);
-    await interaction.reply('⏹️ Stopped the music and cleared the queue');
+    musicManager.playNext(interaction.guild.id, interaction.channel);
+    await interaction.reply('⏭️ Skipped to the next song!');
 }

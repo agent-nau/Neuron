@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
-import musicManager from '../../managers/MusicManager.js';
+import musicManager from '../managers/MusicManager.js';
 
 export const data = new SlashCommandBuilder()
     .setName('queue')
