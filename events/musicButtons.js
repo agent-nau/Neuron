@@ -1,5 +1,5 @@
 import { Events, EmbedBuilder } from 'discord.js';
-const musicManager = require('../managers/MusicManager');
+import musicManager from '../managers/MusicManager';
 
 export default {
     name: Events.InteractionCreate,
@@ -11,7 +11,6 @@ export default {
         const guildId = interaction.guild.id;
         const queue = musicManager.getQueue(guildId);
 
-        // Check if user is in same voice channel
         const voiceChannel = interaction.member.voice.channel;
         const botChannel = interaction.guild.members.me.voice.channel;
         
