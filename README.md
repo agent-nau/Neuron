@@ -14,11 +14,14 @@
   <i>Built with modern ESM architecture and extensible design</i>
 </p>
 
+<b>
 <p align="center">
   <a href="#-features">Features</a> •
   <a href="#-commands">Commands</a> •
-  <a href="#-configuration">Config</a> •
+  <a href="#-configuration">Config</a>
+</b>
 </p>
+
 
 ---
 
