@@ -1,3 +1,4 @@
+// commands/convert.js
 import fs from "fs";
 import path from "path";
 import fetch from "node-fetch";
@@ -58,14 +59,15 @@ export async function execute(interaction) {
       return interaction.editReply(`⚠️ Could not download audio: ${err.message}`);
     }
 
+    // Build the embed
     const embed = new EmbedBuilder()
       .setTitle(data.title || "Converted Audio")
       .setURL(url)
       .setDescription("Here’s your converted MP3 file!")
-      .setThumbnail(data.thumb || null)
+      .setThumbnail(data.thumb || null) // may be undefined
       .addFields(
-        { name: "Duration", value: data.duration || "Unknown", inline: true },
-        { name: "File Size", value: data.filesize || "Unknown", inline: true }
+        { name: "Duration", value: `${Math.floor(data.duration)}s`, inline: true },
+        { name: "File Size", value: `${(data.filesize / 1024 / 1024).toFixed(2)} MB`, inline: true }
       )
       .setColor(0x1DB954)
       .setFooter({ text: "Powered by YouTube MP3 API" });
@@ -76,10 +78,9 @@ export async function execute(interaction) {
       files: [tempFile]
     });
 
-    fs.unlinkSync(tempFile);
+    fs.unlinkSync(tempFile); // cleanup
   } catch (err) {
     console.error("Convert command error:", err);
     await interaction.editReply(`❌ Error: ${err.message}`);
   }
 }
-
