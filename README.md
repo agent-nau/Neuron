@@ -6,7 +6,7 @@
   <img src="https://img.shields.io/badge/Discord.js-v14-5865F2?style=for-the-badge&logo=discord&logoColor=white" />
   <img src="https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" />
   <img src="https://img.shields.io/badge/ESM-Modules-FF6D00?style=for-the-badge&logo=javascript&logoColor=white" />
-  <img src="https://img.shields.io/badge/License-Apache%202.0-green?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/License-NDBLA%201.0-green?style=for-the-badge" />
 </p>
 
 <p align="center">
@@ -192,7 +192,7 @@ Native Fetch - Built-in HTTP requests (Node 18+)
 </b> 
 
 <p align="center">
-  <b>Distributed under the Apache License 2.0. See <a href="https://github.com/agent-nau/Neuron/blob/main/LICENSE">LICENSE</a> for more information.</b>
+  <b>Distributed under the NDBLA License 1.0 See <a href="https://github.com/agent-nau/Neuron/blob/main/LICENSE">LICENSE</a> for more information.</b>
 </p>
 
 ---
