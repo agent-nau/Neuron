@@ -109,7 +109,7 @@
 | `/birthday date hour minute [user]` | Schedule birthday greeting with @everyone mention (auto-detects next occurrence) | `/birthday "February 22 2026" 9 0 @user` | — |
 | `/birthday-list` | View all scheduled birthdays via DM | `/birthday-list` | — |
 | `/birthday-delete id` | Delete a birthday greeting you created | `/birthday-delete 3` | — |
-| `/convert format url` | Download YouTube audio/video (MP3, MP4, etc.) | `/convert mp3 https://youtube.com/watch?v=...` | — |
+| `/convert url` | Download YouTube audio\ | `/conver https://youtube.com/watch?v=...` | — |
 | `/serverinfo` | Display detailed server statistics and info | `/serverinfo` | — |
 | `/embed` | Create custom rich embeds with colors, footer, thumbnail | `/embed` | ManageMessages |
 | `/say message [channel] [anonymous]` | Make bot say something in a channel | `/say Hello everyone! #general` | ManageMessages |
