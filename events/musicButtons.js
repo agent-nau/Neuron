@@ -1,7 +1,7 @@
-const { Events, EmbedBuilder } = require('discord.js');
+import { Events, EmbedBuilder } from ('discord.js');
 const musicManager = require('../managers/MusicManager');
 
-module.exports = {
+export default {
     name: Events.InteractionCreate,
     async execute(interaction) {
         if (!interaction.isButton()) return;
