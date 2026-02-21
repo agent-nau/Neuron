@@ -106,15 +106,16 @@
 
 | Command | Description | Usage | Permission |
 |:--------|:------------|:------|:-----------|
-| `/birthday user mode date` | Send/schedule birthday wishes | `/birthday @user schedule 0 9 * * *` | — |
-| `/birthday-list` | View all scheduled birthdays | `/birthday-list` | — |
-| `/convert format url` | Download YouTube audio/video | `/convert mp3 <url>` | — |
-| `/serverinfo` | Display server statistics | `/serverinfo` | — |
-| `/embed` | Create custom rich embeds | `/embed` | ManageMessages |
-| `/say message` | Make bot say something | `/say Hello everyone!` | ManageMessages |
-| `/ping` | Check bot latency | `/ping` | — |
-| `/invite` | Get bot invite link | `/invite` | — |
-| `/help` | Display help menu | `/help` | — |
+| `/birthday date hour minute [user]` | Schedule birthday greeting with @everyone mention (auto-detects next occurrence) | `/birthday "February 22 2026" 9 0 @user` | — |
+| `/birthday-list` | View all scheduled birthdays via DM | `/birthday-list` | — |
+| `/birthday-delete id` | Delete a birthday greeting you created | `/birthday-delete 3` | — |
+| `/convert format url` | Download YouTube audio/video (MP3, MP4, etc.) | `/convert mp3 https://youtube.com/watch?v=...` | — |
+| `/serverinfo` | Display detailed server statistics and info | `/serverinfo` | — |
+| `/embed` | Create custom rich embeds with colors, footer, thumbnail | `/embed` | ManageMessages |
+| `/say message [channel] [anonymous]` | Make bot say something in a channel | `/say Hello everyone! #general` | ManageMessages |
+| `/ping` | Check bot latency and API response time | `/ping` | — |
+| `/invite` | Get bot invite link for your server | `/invite` | — |
+| `/help` | Display full help menu with all commands | `/help` | — |
 
 </div>
 

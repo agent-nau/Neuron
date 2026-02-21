@@ -23,19 +23,20 @@ async function execute(interaction) {
         .setTitle("📅 Scheduled Birthday Greetings")
         .setDescription(
             sorted.map(g => {
-                const yearText = g.year ? `/${g.year}` : "";
                 const isYours = g.requester === userId;
                 const ownerTag = isYours ? "✅ **Yours**" : `❌ ${g.requesterName}`;
                 const canDelete = isYours ? `\n├ Use: \`/birthday-delete id:${g.id}\`` : "";
                 
                 return `**#${g.id}** ${ownerTag}\n` +
                        `├ For: **${g.user}**\n` +
-                       `├ Date: \`${g.day}/${g.month}${yearText}\`\n` +
+                       `├ Next: \`${g.day}/${g.month}/${g.nextYear}\`\n` +
+                       `├ Time: \`${g.timeString}\`\n` +
+                       `├ Mention: @everyone\n` +
                        `└ Channel: <#${g.channelId}>${canDelete}`;
             }).join("\n\n")
         )
         .setFooter({ 
-            text: `Total: ${scheduledGreetings.length} | ✅ You can delete your own` 
+            text: `Total: ${scheduledGreetings.length} | Auto-renews annually | ✅ You can delete your own` 
         })
         .setTimestamp();
 
