@@ -129,6 +129,20 @@
 | `/removerole @user @role` | Remove role from user | `/removerole @user @Member` | Manage Roles |
 
 </div>
+
+<h3 align="center">🎵 Music </h3>
+
+<div align="center">
+
+| Command | Description | Usage |
+|---------|-------------|-------|
+| `/play <song>` | Play a song from YouTube | `/play Believer` or `/play <youtube-url>` |
+| `/pause` | Pause or resume current song | `/pause` |
+| `/skip` | Skip to next song in queue | `/skip` |
+| `/stop` | Stop playback and clear queue | `/stop` |
+| `/queue` | Show current queue | `/queue` |
+
+</div>
  
 ---
 
