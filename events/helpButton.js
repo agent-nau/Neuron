@@ -55,10 +55,10 @@ async function getCategories() {
     return categoriesCache;
 }
 
-export default {
-    name: Events.InteractionCreate,
-    async execute(interaction) {
-        if (!interaction.isButton()) return;
+export const name = Events.InteractionCreate;
+
+export async function execute(interaction) {
+    if (!interaction.isButton()) return;
         if (!interaction.customId.startsWith('help_')) return;
         
         const categories = await getCategories();
@@ -106,5 +106,4 @@ export default {
             );
         
         await interaction.update({ embeds: [embed], components: [row] });
-    }
-};
+}

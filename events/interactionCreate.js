@@ -44,52 +44,7 @@ export async function execute(i, { warnings, verifSettings, verifCodes, joinSett
       return await i.update({ embeds: [embed], components: [] });
     }
 
-    // 📖 Help menu pagination buttons
-    if (i.isButton() && i.customId.startsWith("help_")) {
-      const parts = i.customId.split("_");
-      const direction = parts[1];   // "next" or "prev"
-      const userId = parts[2];      // user ID
-      const rawPage = parts[3];     // current page number
-
-      if (i.user.id !== userId) {
-        return await i.reply({ content: "❌ You can't control someone else's help menu.", ephemeral: true });
-      }
-
-      const page = parseInt(rawPage);
-      const commands = [...client.commands.values()];
-      const pageSize = 5;
-      const totalPages = Math.ceil(commands.length / pageSize);
-
-      const newPage = direction === "next" ? page + 1 : page - 1;
-      const pageCommands = commands.slice(newPage * pageSize, (newPage + 1) * pageSize);
-
-      const embed = new EmbedBuilder()
-        .setTitle("📘 Help Menu")
-        .setDescription(`Page ${newPage + 1} of ${totalPages}`)
-        .setColor(0x00bfff);
-
-      for (const cmd of pageCommands) {
-        embed.addFields({
-          name: `/${cmd.data.name}`,
-          value: cmd.data.description || "No description",
-        });
-      }
-
-      const row = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId(`help_prev_${userId}_${newPage}`)
-          .setLabel("◀ Previous")
-          .setStyle(ButtonStyle.Secondary)
-          .setDisabled(newPage === 0),
-        new ButtonBuilder()
-          .setCustomId(`help_next_${userId}_${newPage}`)
-          .setLabel("Next ▶")
-          .setStyle(ButtonStyle.Primary)
-          .setDisabled(newPage >= totalPages - 1)
-      );
-
-      return await i.update({ embeds: [embed], components: [row] });
-    }
+    // 📖 Help menu pagination buttons handled by helpButton.js
 
     // 🧩 Verification: start button
     if (i.isButton() && i.customId.startsWith("verif_start_")) {
