@@ -1,4 +1,4 @@
-import { SlashCommandBuilder } from 'discord.js';
+import { SlashCommandBuilder, MessageFlags } from 'discord.js';
 import musicManager from '../managers/MusicManager.js';
 
 export const category = 'Music';
@@ -14,7 +14,7 @@ export async function execute(interaction) {
     if (!voiceChannel || (botChannel && voiceChannel.id !== botChannel.id)) {
         return interaction.reply({
             content: '❌ You need to be in the same voice channel as me!',
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
         });
     }
 

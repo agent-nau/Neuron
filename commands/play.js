@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
+import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } from 'discord.js';
 import musicManager from '../managers/MusicManager.js';
 
 export const category = 'Music';
@@ -19,7 +19,7 @@ export async function execute(interaction) {
     if (!voiceChannel) {
         return interaction.reply({
             content: '❌ You need to be in a voice channel!',
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
         });
     }
 
@@ -27,7 +27,7 @@ export async function execute(interaction) {
     if (!permissions.has('Connect') || !permissions.has('Speak')) {
         return interaction.reply({
             content: '❌ I need permissions to join and speak in your voice channel!',
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
         });
     }
 
@@ -49,10 +49,8 @@ export async function execute(interaction) {
         const { song, position, isNowPlaying } = result;
 
         if (isNowPlaying) {
-            // Delete the deferred reply since now playing embed will be sent
             await interaction.deleteReply().catch(() => {});
         } else {
-            // Show queue message
             await interaction.editReply({
                 content: `**Queued at position #${position}**\n[${song.title}](${song.url}) [${song.duration}]\n\n*Not the correct track? Try being more specific or use /search*`
             });

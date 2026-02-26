@@ -1,4 +1,4 @@
-import { Events, EmbedBuilder } from 'discord.js';
+import { Events, EmbedBuilder, MessageFlags } from 'discord.js';
 import musicManager from '../managers/MusicManager.js';
 
 export const name = Events.InteractionCreate;
@@ -9,20 +9,25 @@ export async function execute(interaction) {
     const action = interaction.customId.replace('music_', '');
     const guildId = interaction.guild.id;
 
+    // Check voice channel membership
     const voiceChannel = interaction.member.voice.channel;
-    const botChannel = interaction.guild.members.me.voice.channel;
-
+    
     if (!voiceChannel) {
         return interaction.reply({
             content: '❌ You need to be in a voice channel!',
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
         });
     }
 
-    if (botChannel && voiceChannel.id !== botChannel.id) {
+    // Check if bot is in a voice channel
+    const botMember = interaction.guild.members.cache.get(interaction.client.user.id);
+    const botVoiceChannel = botMember?.voice?.channel;
+
+    // If bot is in a voice channel, user must be in the same one
+    if (botVoiceChannel && voiceChannel.id !== botVoiceChannel.id) {
         return interaction.reply({
             content: '❌ You need to be in the same voice channel as me!',
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
         });
     }
 
@@ -37,7 +42,7 @@ export async function execute(interaction) {
                     await musicManager.updateNowPlaying(guildId, interaction.channel, true);
                     await interaction.followUp({
                         content: '⏸️ Paused the music',
-                        ephemeral: true
+                        flags: MessageFlags.Ephemeral
                     });
                 }
             } else {
@@ -46,7 +51,7 @@ export async function execute(interaction) {
                     await musicManager.updateNowPlaying(guildId, interaction.channel, false);
                     await interaction.followUp({
                         content: '▶️ Resumed the music',
-                        ephemeral: true
+                        flags: MessageFlags.Ephemeral
                     });
                 }
             }
@@ -56,7 +61,7 @@ export async function execute(interaction) {
             musicManager.playNext(guildId, interaction.channel);
             await interaction.followUp({
                 content: '⏭️ Skipped to the next song',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
             break;
 
@@ -65,22 +70,21 @@ export async function execute(interaction) {
             if (hasPrevious) {
                 await interaction.followUp({
                     content: '⏮️ Playing previous song',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             } else {
                 await interaction.followUp({
                     content: '❌ No previous songs in history',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
             break;
 
         case 'stop':
-            // Button stop only stops music, doesn't leave VC
             musicManager.stopOnly(interaction.guild.id);
             await interaction.followUp({
                 content: '⏹️ Stopped the music and cleared the queue',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
             break;
 
@@ -95,7 +99,7 @@ export async function execute(interaction) {
 
             await interaction.followUp({
                 embeds: [embed],
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
             break;
     }
