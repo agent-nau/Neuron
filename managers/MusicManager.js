@@ -1,6 +1,5 @@
 import { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, VoiceConnectionStatus } from '@discordjs/voice';
-import ytdl from '@distube/ytdl-core';
-import ytSearch from 'yt-search';
+import play from 'play-dl';
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 
 class MusicManager {
@@ -28,22 +27,19 @@ class MusicManager {
     async play(guildId, channel, voiceChannel, query, requester) {
         const queue = this.getQueue(guildId);
         
-        let video = null;
+        // Force search via SoundCloud to completely bypass YouTube IP bans
+        const searchResult = await play.search(query, { source: { soundcloud: 'tracks' }, limit: 1 });
+        if (!searchResult || !searchResult.length) return null;
         
-        // If it's a URL, play-dl handles getting the stream from it.
-        // We still need metadata for the embed, so we use ytSearch.
-        const searchResult = await ytSearch(query);
-        if (!searchResult?.videos?.length) return null;
-        
-        video = searchResult.videos[0];
+        video = searchResult[0];
         
         const song = {
-            title: video.title,
+            title: video.name || video.title || 'Unknown Title',
             url: video.url,
-            duration: video.timestamp, // yt-search returns 'MM:SS'
-            durationSec: video.seconds,
-            thumbnail: video.thumbnail,
-            author: video.author?.name || 'Unknown',
+            duration: video.durationRaw,
+            durationSec: video.durationInSec,
+            thumbnail: video.thumbnail || video.thumbnails?.[0]?.url,
+            author: video.user?.name || video.channel?.name || 'Unknown',
             requester: requester
         };
 
@@ -110,12 +106,10 @@ class MusicManager {
         const song = queue.songs[queue.currentIndex];
         
         try {
-            const stream = ytdl(song.url, { 
-                filter: 'audioonly', 
-                highWaterMark: 1 << 25, 
-                quality: 'highestaudio' 
+            const stream = await play.stream(song.url);
+            const resource = createAudioResource(stream.stream, {
+                inputType: stream.type
             });
-            const resource = createAudioResource(stream);
 
             player.play(resource);
             queue.playing = true;

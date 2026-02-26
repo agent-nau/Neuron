@@ -25,7 +25,7 @@
     "puter": "^1.0.0",
     "@discordjs/voice": "^0.17.0",
     "opusscript": "^0.0.8",
-    "@distube/ytdl-core": "^4.15.9",
+    "play-dl": "latest",
     "yt-search": "^2.12.1",
     "sodium-native": "^4.0.4",
     "libsodium-wrappers": "^0.7.11",
