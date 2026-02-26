@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 
 export const category = 'Utility';
 
@@ -29,8 +29,9 @@ async function getCategories() {
     const categoryMap = new Map();
     
     for (const file of commandFiles) {
-        const filePath = path.join('file://', commandsPath, file);
-        const module = await import(filePath);
+        const filePath = path.join(commandsPath, file);
+        const fileUrl = import.meta.resolve(pathToFileURL(filePath).href);
+        const module = await import(fileUrl);
         
         const command = module.default || module;
         if (!command.data) continue;

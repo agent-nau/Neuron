@@ -22,7 +22,6 @@
 </b>
 </p>
 
-
 ---
 
 <h2 align="center">✨ Features</h2>
@@ -32,6 +31,7 @@
 <td width="25%" valign="top">
 
 ### 🛡️ **Moderation**
+
 - Kick, Ban, Timeout, Remove Timeout
 - Warning system with tracking
 - Bulk message clearing (`/clear`)
@@ -42,6 +42,7 @@
 <td width="25%" valign="top">
 
 ### 🔐 **Verification**
+
 - Custom verification panels
 - Secure modal-based flow
 - Role assignment on verify
@@ -51,6 +52,7 @@
 <td width="25%" valign="top">
 
 ### 🎫 **Ticketing**
+
 - One-click ticket creation
 - Private channel generation
 - Support team pings
@@ -60,6 +62,7 @@
 <td width="25%" valign="top">
 
 ### ⚡ **Utilities**
+
 - Server information (`/serverinfo`)
 - Custom embed builder (`/embed`)
 - YouTube converter (`/convert`)
@@ -78,15 +81,15 @@
 
 <div align="center">
 
-| Command | Description | Usage | Permission |
-|:--------|:------------|:------|:-----------|
-| `/kick @user [reason]` | Remove user from server | `/kick @user spam` | Kick Members |
-| `/ban @user [reason]` | Permanently ban user | `/ban @user toxicity` | Ban Members |
-| `/timeout @user duration [reason]` | Temporarily timeout user | `/timeout @user 1h rude` | Moderate Members |
-| `/removetimeout @user` | Remove active timeout | `/removetimeout @user` | Moderate Members |
-| `/warnings @user` | View user warning history | `/warnings @user` | Moderate Members |
-| `/clear amount` | Delete bulk messages | `/clear 100` | Manage Messages |
-| `/lockdown [reason]` | Lock channel for @everyone | `/lockdown emergency` | Manage Channels |
+| Command                            | Description                | Usage                    | Permission       |
+| :--------------------------------- | :------------------------- | :----------------------- | :--------------- |
+| `/kick @user [reason]`             | Remove user from server    | `/kick @user spam`       | Kick Members     |
+| `/ban @user [reason]`              | Permanently ban user       | `/ban @user toxicity`    | Ban Members      |
+| `/timeout @user duration [reason]` | Temporarily timeout user   | `/timeout @user 1h rude` | Moderate Members |
+| `/removetimeout @user`             | Remove active timeout      | `/removetimeout @user`   | Moderate Members |
+| `/warnings @user`                  | View user warning history  | `/warnings @user`        | Moderate Members |
+| `/clear amount`                    | Delete bulk messages       | `/clear 100`             | Manage Messages  |
+| `/lockdown [reason]`               | Lock channel for @everyone | `/lockdown emergency`    | Manage Channels  |
 
 </div>
 
@@ -94,12 +97,12 @@
 
 <div align="center">
 
-| Command | Description | Usage | Permission |
-|:--------|:------------|:------|:-----------|
-| `/verify setup #channel` | Create verification panel | `/verify setup #verify` | Administrator |
-| `/ticket setup #category` | Setup ticket system | `/ticket setup #tickets` | Administrator |
-| `/autojoin setup #channel` | Configure welcome messages | `/autojoin setup #welcome` | Administrator |
-| `/reactionrole setup` | Create reaction role message | `/reactionrole setup` | Manage Roles |
+| Command                    | Description                  | Usage                      | Permission    |
+| :------------------------- | :--------------------------- | :------------------------- | :------------ |
+| `/verify setup #channel`   | Create verification panel    | `/verify setup #verify`    | Administrator |
+| `/ticket setup #category`  | Setup ticket system          | `/ticket setup #tickets`   | Administrator |
+| `/autojoin setup #channel` | Configure welcome messages   | `/autojoin setup #welcome` | Administrator |
+| `/reactionrole setup`      | Create reaction role message | `/reactionrole setup`      | Manage Roles  |
 
 </div>
 
@@ -107,18 +110,18 @@
 
 <div align="center">
 
-| Command | Description | Usage | Permission |
-|:--------|:------------|:------|:-----------|
-| `/birthday user date [send_now] [hour] [minute]` | Schedule birthday greeting with @everyone mention (auto-detects next occurrence) | `/birthday @user "February 22 2026" send_now=True / 9 0 ` | — |
-| `/birthday-list` | View all scheduled birthdays via DM | `/birthday-list` | — |
-| `/birthday-delete id` | Delete a birthday greeting you created | `/birthday-delete 3` | — |
-| `/convert url` | Download YouTube audio | `/conver https://youtube.com/watch?v=...` | — |
-| `/serverinfo` | Display detailed server statistics and info | `/serverinfo` | — |
-| `/embed` | Create custom rich embeds with colors, footer, thumbnail | `/embed` | ManageMessages |
-| `/say message [channel] [anonymous]` | Make bot say something in a channel | `/say Hello everyone! #general` | ManageMessages |
-| `/ping` | Check bot latency and API response time | `/ping` | — |
-| `/invite` | Get bot invite link for your server | `/invite` | — |
-| `/help` | Display full help menu with all commands | `/help` | — |
+| Command                                          | Description                                                                      | Usage                                                     | Permission     |
+| :----------------------------------------------- | :------------------------------------------------------------------------------- | :-------------------------------------------------------- | :------------- |
+| `/birthday user date [send_now] [hour] [minute]` | Schedule birthday greeting with @everyone mention (auto-detects next occurrence) | `/birthday @user "February 22 2026" send_now=True / 9 0 ` | —              |
+| `/birthday-list`                                 | View all scheduled birthdays via DM                                              | `/birthday-list`                                          | —              |
+| `/birthday-delete id`                            | Delete a birthday greeting you created                                           | `/birthday-delete 3`                                      | —              |
+| `/convert url`                                   | Download YouTube audio                                                           | `/conver https://youtube.com/watch?v=...`                 | —              |
+| `/serverinfo`                                    | Display detailed server statistics and info                                      | `/serverinfo`                                             | —              |
+| `/embed`                                         | Create custom rich embeds with colors, footer, thumbnail                         | `/embed`                                                  | ManageMessages |
+| `/say message [channel] [anonymous]`             | Make bot say something in a channel                                              | `/say Hello everyone! #general`                           | ManageMessages |
+| `/ping`                                          | Check bot latency and API response time                                          | `/ping`                                                   | —              |
+| `/invite`                                        | Get bot invite link for your server                                              | `/invite`                                                 | —              |
+| `/help`                                          | Display full help menu with all commands                                         | `/help`                                                   | —              |
 
 </div>
 
@@ -126,9 +129,9 @@
 
 <div align="center">
 
-| Command | Description | Usage | Permission |
-|:--------|:------------|:------|:-----------|
-| `/addrole @user @role` | Add role to user | `/addrole @user @Member` | Manage Roles |
+| Command                   | Description           | Usage                       | Permission   |
+| :------------------------ | :-------------------- | :-------------------------- | :----------- |
+| `/addrole @user @role`    | Add role to user      | `/addrole @user @Member`    | Manage Roles |
 | `/removerole @user @role` | Remove role from user | `/removerole @user @Member` | Manage Roles |
 
 </div>
@@ -137,13 +140,14 @@
 
 <div align="center">
 
-| Command | Description | Usage |
-|---------|-------------|-------|
-| `/play <song>` | Play a song from YouTube | `/play Believer` or `/play <youtube-url>` |
-| `/pause` | Pause or resume current song | `/pause` |
-| `/skip` | Skip to next song in queue | `/skip` |
-| `/stop` | Stop playback and clear queue | `/stop` |
-| `/queue` | Show current queue | `/queue` |
+| Command        | Description                   | Usage                                     |
+| -------------- | ----------------------------- | ----------------------------------------- |
+| `/play <song>` | Play a song from YouTube      | `/play Believer` or `/play <youtube-url>` |
+| `/pause`       | Pause or resume current song  | `/pause`                                  |
+| `/skip`        | Skip to next song in queue    | `/skip`                                   |
+| `/stop`        | Stop playback and clear queue | `/stop`                                   |
+| `/queue`       | Show current queue            | `/queue`                                  |
+| `/leave`       | Leave the voice channel       | `/leave`                                  |
 
 </div>
  
@@ -184,18 +188,18 @@ Native Fetch - Built-in HTTP requests (Node 18+)
 
 ---
 
-
 <b>
 <p align="center">
  📄 License
 </p>
-</b> 
+</b>
 
 <p align="center">
   <b>Distributed under the <a href="https://github.com/agent-nau/Neuron/blob/main/LICENSE">NDBLA Licence 1.0</a></b>
 </p>
 
 ---
+
 <p align="center">
   <b>Made with ❤️ by <a href="https://github.com/agent-nau/">Agent-Nau</a> for Discord communities.</b>
 </p>

@@ -104,7 +104,9 @@ class MusicManager {
         const song = queue.songs[queue.currentIndex];
         
         try {
-            const stream = await play.stream(song.url);
+            const stream = await play.stream(song.url, {
+                discordPlayerCompatibility: true
+            });
             const resource = createAudioResource(stream.stream, {
                 inputType: stream.type
             });
@@ -115,7 +117,7 @@ class MusicManager {
             await this.sendNowPlaying(textChannel, song, queue, guildId);
         } catch (error) {
             console.error('Play error:', error);
-            textChannel.send('❌ Error loading song. Skipping...');
+            textChannel.send(`❌ Error loading song: ${error.message || 'Unknown error'}. Skipping...`);
             this.playNext(guildId, textChannel);
         }
     }
