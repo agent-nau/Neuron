@@ -1,4 +1,5 @@
 import { SlashCommandBuilder } from "discord.js";
+import { getVoiceConnection } from "@discordjs/voice";
 import musicManager from "../managers/MusicManager.js";
 
 export const category = "Music";
@@ -18,6 +19,15 @@ export async function execute(interaction) {
         });
     }
 
+    // Stop anything playing through the manager and clear the queue
     musicManager.stop(interaction.guild.id);
+    
+    // Explicitly disconnect from the voice channel through DiscordJS directly
+    // in case the connection was orphaned from the music manager
+    const connection = getVoiceConnection(interaction.guild.id);
+    if (connection) {
+        connection.destroy();
+    }
+
     await interaction.reply("👋 Left the voice channel");
 }

@@ -1,5 +1,5 @@
 import { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, VoiceConnectionStatus } from '@discordjs/voice';
-import play from 'play-dl';
+import ytdl from '@distube/ytdl-core';
 import ytSearch from 'yt-search';
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 
@@ -110,12 +110,12 @@ class MusicManager {
         const song = queue.songs[queue.currentIndex];
         
         try {
-            const stream = await play.stream(song.url, {
-                discordPlayerCompatibility: true
+            const stream = ytdl(song.url, { 
+                filter: 'audioonly', 
+                highWaterMark: 1 << 25, 
+                quality: 'highestaudio' 
             });
-            const resource = createAudioResource(stream.stream, {
-                inputType: stream.type
-            });
+            const resource = createAudioResource(stream);
 
             player.play(resource);
             queue.playing = true;
