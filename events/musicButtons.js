@@ -9,30 +9,31 @@ export async function execute(interaction) {
     const action = interaction.customId.replace('music_', '');
     const guildId = interaction.guild.id;
 
-    // Fetch fresh member data to ensure voice state is current
+    // DEFER FIRST to prevent timeout
+    await interaction.deferUpdate().catch(() => {});
+
+    // Now check voice channel (after defer)
     const member = await interaction.guild.members.fetch(interaction.user.id);
     const voiceChannel = member.voice.channel;
 
     if (!voiceChannel) {
-        return interaction.reply({
+        return interaction.followUp({
             content: '❌ You need to be in a voice channel!',
             flags: MessageFlags.Ephemeral
         });
     }
 
-    // Check if bot is in a voice channel
+    // Check bot voice channel
     const botMember = await interaction.guild.members.fetch(interaction.client.user.id);
     const botVoiceChannel = botMember.voice.channel;
 
     // If bot is in a voice channel, user must be in the same one
     if (botVoiceChannel && voiceChannel.id !== botVoiceChannel.id) {
-        return interaction.reply({
+        return interaction.followUp({
             content: '❌ You need to be in the same voice channel as me!',
             flags: MessageFlags.Ephemeral
         });
     }
-
-    await interaction.deferUpdate();
 
     switch (action) {
         case 'pause':

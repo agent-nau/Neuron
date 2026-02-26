@@ -9,7 +9,7 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction) {
   const embed = new EmbedBuilder()
     .setTitle("Invite Link")
-    .setDescription("Click the button below to invite the bot to your server!")
+    .setDescription("Click the button below to invite the bot to your server! (deleting in a minute)")
     .setColor(0xffd700)
     .setFooter({
       text: `${interaction.client.user.username} | powered by vecs corporation`,
@@ -32,4 +32,8 @@ export async function execute(interaction) {
     components: [row],
     ephemeral: false
   });
+
+  setTimeout(() => {
+    interaction.deleteReply();
+  }, 60000);
 }
