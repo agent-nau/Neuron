@@ -26,6 +26,7 @@
     "libsodium-wrappers": "^0.7.15",
     "node-cron": "^4.2.1",
     "node-fetch": "^3.3.2",
+    "play-dl": "1.9.7",
     "opusscript": "^0.0.8",
     "puter": "^1.0.0",
     "sodium-native": "^4.3.1",
