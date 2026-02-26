@@ -1,5 +1,5 @@
-import { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, VoiceConnectionStatus } from '@discordjs/voice';
-import play from 'play-dl';
+import { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, VoiceConnectionStatus, StreamType } from '@discordjs/voice';
+import ytdl from '@distube/ytdl-core';
 import yts from 'yt-search';
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 
@@ -30,11 +30,18 @@ class MusicManager {
 
         try {
             // Check if it's a YouTube URL
-            if (query.includes('youtube.com') || query.includes('youtu.be')) {
-                const videoInfo = await play.video_info(query);
-                video = videoInfo.video_details;
+            if (ytdl.validateURL(query)) {
+                const info = await ytdl.getInfo(query);
+                video = {
+                    title: info.videoDetails.title,
+                    url: info.videoDetails.video_url,
+                    duration: this.formatDuration(parseInt(info.videoDetails.lengthSeconds)),
+                    durationSec: parseInt(info.videoDetails.lengthSeconds),
+                    thumbnail: info.videoDetails.thumbnails[0].url,
+                    author: info.videoDetails.author.name
+                };
             } else {
-                // Use yt-search for better reliability
+                // Use yt-search
                 const search = await yts(query);
                 if (search.videos && search.videos.length > 0) {
                     const firstVideo = search.videos[0];
@@ -50,18 +57,16 @@ class MusicManager {
             }
         } catch (error) {
             console.error('Search error:', error);
-            // Fallback to play-dl search
-            try {
-                const searchResult = await play.search(query, { limit: 1 });
-                if (searchResult && searchResult.length > 0) {
-                    video = searchResult[0];
-                }
-            } catch (fallbackError) {
-                console.error('Fallback search also failed:', fallbackError);
-            }
+            return null;
         }
 
         return video;
+    }
+
+    formatDuration(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
     }
 
     async play(guildId, channel, voiceChannel, query, requester) {
@@ -99,6 +104,8 @@ class MusicManager {
             channelId: voiceChannel.id,
             guildId: voiceChannel.guild.id,
             adapterCreator: voiceChannel.guild.voiceAdapterCreator,
+            selfDeaf: false,
+            selfMute: false
         });
 
         this.connections.set(guildId, connection);
@@ -110,6 +117,10 @@ class MusicManager {
 
         connection.on(VoiceConnectionStatus.Disconnected, () => {
             this.cleanup(guildId);
+        });
+
+        connection.on('error', (error) => {
+            console.error('Voice connection error:', error);
         });
 
         player.on(AudioPlayerStatus.Idle, () => {
@@ -142,9 +153,16 @@ class MusicManager {
         const song = queue.songs[queue.currentIndex];
 
         try {
-            const stream = await play.stream(song.url);
-            const resource = createAudioResource(stream.stream, {
-                inputType: stream.type
+            // Use @distube/ytdl-core with agent to avoid bot detection
+            const stream = ytdl(song.url, {
+                filter: 'audioonly',
+                quality: 'highestaudio',
+                highWaterMark: 1 << 25,
+                dlChunkSize: 0
+            });
+
+            const resource = createAudioResource(stream, {
+                inputType: StreamType.Arbitrary
             });
 
             player.play(resource);

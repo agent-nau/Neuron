@@ -4,6 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "url";
 import { warnings, verifSettings, verifCodes, joinSettings, generateCode } from "./state.js";
+import sodium from 'sodium-native'; // Import sodium for voice encryption
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -17,7 +18,6 @@ const client = new Client({
         GatewayIntentBits.GuildMembers,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
-        GatewayIntentBits.GuildVoiceStates, // Added for music
     ],
 });
 
@@ -25,25 +25,12 @@ client.on('debug', () => {});
 
 client.commands = new Collection();
 
-// Load commands (including subdirectories)
+// Load commands
 const commandsPath = path.join(__dirname, "commands");
+const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith(".js"));
 
-function loadCommandsFromDir(dirPath) {
-    const entries = fs.readdirSync(dirPath, { withFileTypes: true });
-    
-    for (const entry of entries) {
-        const fullPath = path.join(dirPath, entry.name);
-        
-        if (entry.isDirectory()) {
-            // Recursively load from subdirectories
-            loadCommandsFromDir(fullPath);
-        } else if (entry.isFile() && entry.name.endsWith(".js")) {
-            loadCommand(fullPath);
-        }
-    }
-}
-
-async function loadCommand(filePath) {
+for (const file of commandFiles) {
+    const filePath = path.join(commandsPath, file);
     try {
         const command = await import(filePath);
         if ('data' in command && 'execute' in command) {
@@ -56,9 +43,6 @@ async function loadCommand(filePath) {
         console.error(`❌ Failed to load command at ${filePath}:`, error);
     }
 }
-
-// Start loading commands
-loadCommandsFromDir(commandsPath);
 
 // Load events
 const eventsPath = path.join(__dirname, "events");
