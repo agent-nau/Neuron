@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from "discord.js";
-import MusicManager from "../managers/MusicManager.js";
+import musicManager from "../managers/MusicManager.js";
 
 export const category = "Music";
 
@@ -8,10 +8,16 @@ export const data = new SlashCommandBuilder()
     .setDescription("Leaves the voice channel");
 
 export async function execute(interaction) {
-    const player = MusicManager.get(interaction.guild.id);
-    if (!player) {
-        return interaction.reply("No music is being played");
+    const voiceChannel = interaction.member.voice.channel;
+    const botChannel = interaction.guild.members.me.voice.channel;
+    
+    if (!voiceChannel || (botChannel && voiceChannel.id !== botChannel.id)) {
+        return interaction.reply({ 
+            content: '❌ You need to be in the same voice channel as me!', 
+            ephemeral: true 
+        });
     }
-    player.destroy();
-    await interaction.reply("Left the voice channel");
+
+    musicManager.stop(interaction.guild.id);
+    await interaction.reply("👋 Left the voice channel");
 }

@@ -1,5 +1,6 @@
 import { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, VoiceConnectionStatus } from '@discordjs/voice';
 import play from 'play-dl';
+import ytSearch from 'yt-search';
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 
 class MusicManager {
@@ -27,17 +28,22 @@ class MusicManager {
     async play(guildId, channel, voiceChannel, query, requester) {
         const queue = this.getQueue(guildId);
         
-        const searchResult = await play.search(query, { limit: 1 });
-        if (!searchResult.length) return null;
+        let video = null;
         
-        const video = searchResult[0];
+        // If it's a URL, play-dl handles getting the stream from it.
+        // We still need metadata for the embed, so we use ytSearch.
+        const searchResult = await ytSearch(query);
+        if (!searchResult?.videos?.length) return null;
+        
+        video = searchResult.videos[0];
+        
         const song = {
             title: video.title,
             url: video.url,
-            duration: video.durationRaw,
-            durationSec: video.durationInSec,
-            thumbnail: video.thumbnails[0]?.url,
-            author: video.channel?.name,
+            duration: video.timestamp, // yt-search returns 'MM:SS'
+            durationSec: video.seconds,
+            thumbnail: video.thumbnail,
+            author: video.author?.name || 'Unknown',
             requester: requester
         };
 
