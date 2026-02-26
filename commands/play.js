@@ -34,7 +34,7 @@ export async function execute(interaction) {
     await interaction.deferReply();
 
     try {
-        const song = await musicManager.play(
+        const result = await musicManager.play(
             interaction.guild.id,
             interaction.channel,
             voiceChannel,
@@ -42,19 +42,20 @@ export async function execute(interaction) {
             interaction.user
         );
 
-        if (!song) {
+        if (!result) {
             return interaction.editReply('❌ No results found for that query!');
         }
 
-        const queue = musicManager.getQueue(interaction.guild.id);
+        const { song, position, isNowPlaying } = result;
 
-        if (queue.songs.length > 1) {
-            const position = queue.songs.length - 1;
-            await interaction.editReply({
-                content: `✅ **${song.title}** has been added to the queue at position #${position}`
-            });
-        } else {
+        if (isNowPlaying) {
+            // Delete the deferred reply since now playing embed will be sent
             await interaction.deleteReply().catch(() => {});
+        } else {
+            // Show queue message
+            await interaction.editReply({
+                content: `**Queued at position #${position}**\n[${song.title}](${song.url}) [${song.duration}]\n\n*Not the correct track? Try being more specific or use /search*`
+            });
         }
     } catch (error) {
         console.error(error);

@@ -1,5 +1,4 @@
 import { Events, EmbedBuilder } from 'discord.js';
-import { getVoiceConnection } from '@discordjs/voice';
 import musicManager from '../managers/MusicManager.js';
 
 export const name = Events.InteractionCreate;
@@ -77,15 +76,10 @@ export async function execute(interaction) {
             break;
 
         case 'stop':
-            musicManager.stop(interaction.guild.id);
-            
-            const connection = getVoiceConnection(interaction.guild.id);
-            if (connection) {
-                connection.destroy();
-            }
-            
+            // Button stop only stops music, doesn't leave VC
+            musicManager.stopOnly(interaction.guild.id);
             await interaction.followUp({
-                content: '⏹️ Stopped the music, cleared the queue, and left the voice channel',
+                content: '⏹️ Stopped the music and cleared the queue',
                 ephemeral: true
             });
             break;

@@ -1,5 +1,6 @@
 import { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, VoiceConnectionStatus } from '@discordjs/voice';
 import play from 'play-dl';
+import yts from 'yt-search';
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 
 class MusicManager {
@@ -24,35 +25,71 @@ class MusicManager {
         return this.queues.get(guildId);
     }
 
+    async searchSong(query) {
+        let video = null;
+
+        try {
+            // Check if it's a YouTube URL
+            if (query.includes('youtube.com') || query.includes('youtu.be')) {
+                const videoInfo = await play.video_info(query);
+                video = videoInfo.video_details;
+            } else {
+                // Use yt-search for better reliability
+                const search = await yts(query);
+                if (search.videos && search.videos.length > 0) {
+                    const firstVideo = search.videos[0];
+                    video = {
+                        title: firstVideo.title,
+                        url: firstVideo.url,
+                        duration: firstVideo.duration.timestamp,
+                        durationSec: firstVideo.duration.seconds,
+                        thumbnail: firstVideo.thumbnail,
+                        author: firstVideo.author.name
+                    };
+                }
+            }
+        } catch (error) {
+            console.error('Search error:', error);
+            // Fallback to play-dl search
+            try {
+                const searchResult = await play.search(query, { limit: 1 });
+                if (searchResult && searchResult.length > 0) {
+                    video = searchResult[0];
+                }
+            } catch (fallbackError) {
+                console.error('Fallback search also failed:', fallbackError);
+            }
+        }
+
+        return video;
+    }
+
     async play(guildId, channel, voiceChannel, query, requester) {
         const queue = this.getQueue(guildId);
 
-        const searchResult = await play.search(query, { source: { soundcloud: 'tracks' }, limit: 1 });
-        if (!searchResult || !searchResult.length) return null;
-
-        const video = searchResult[0];
+        const video = await this.searchSong(query);
+        if (!video) return null;
 
         const song = {
-            title: video.name || video.title || 'Unknown Title',
+            title: video.title || 'Unknown Title',
             url: video.url,
-            duration: video.durationRaw,
-            durationSec: video.durationInSec,
-            thumbnail: video.thumbnail || video.thumbnails?.[0]?.url,
-            author: video.user?.name || video.channel?.name || 'Unknown',
+            duration: video.duration || 'Unknown',
+            durationSec: video.durationSec || 0,
+            thumbnail: video.thumbnail || null,
+            author: video.author || 'Unknown',
             requester: requester
         };
 
+        const wasEmpty = queue.songs.length === 0;
         queue.songs.push(song);
 
         if (!queue.playing && !this.players.has(guildId)) {
             await this.connectAndPlay(guildId, voiceChannel, channel);
+            return { song, position: 0, isNowPlaying: true };
         } else {
-            if (queue.currentMessage) {
-                await this.updateNowPlaying(guildId, channel, false);
-            }
+            const position = queue.songs.length - 1;
+            return { song, position, isNowPlaying: false };
         }
-
-        return song;
     }
 
     async connectAndPlay(guildId, voiceChannel, textChannel) {
@@ -121,6 +158,19 @@ class MusicManager {
         }
     }
 
+    async sendQueueMessage(channel, song, position) {
+        const embed = new EmbedBuilder()
+            .setTitle(`Queued at position #${position}`)
+            .setDescription(`[${song.title}](${song.url}) [${song.duration}]`)
+            .setThumbnail(song.thumbnail)
+            .setColor('#FFA500')
+            .setFooter({ 
+                text: 'Not the correct track? Try being more specific or use /search' 
+            });
+
+        return await channel.send({ embeds: [embed] });
+    }
+
     async sendNowPlaying(channel, song, queue, guildId) {
         if (queue.currentMessage) {
             try {
@@ -128,48 +178,53 @@ class MusicManager {
             } catch (e) {}
         }
 
+        // Build upcoming queue text
+        let queueText = '';
+        const upcoming = queue.songs.slice(queue.currentIndex + 1, queue.currentIndex + 6);
+        if (upcoming.length > 0) {
+            queueText = upcoming.map((s, i) => `${i + 1}. [${s.title}](${s.url}) [${s.duration}]`).join('\n');
+        } else {
+            queueText = '*No upcoming songs*';
+        }
+
         const embed = new EmbedBuilder()
             .setAuthor({
-                name: '🎵 Now playing',
+                name: '▶ Now Playing',
                 iconURL: song.requester.displayAvatarURL({ dynamic: true })
             })
-            .setDescription(`***[${song.title}](${song.url})***`)
+            .setDescription(`[${song.title}](${song.url}) [${song.duration}]`)
             .addFields(
-                { name: 'Artist', value: song.author || 'Unknown', inline: true },
-                { name: 'Duration', value: song.duration || 'Unknown', inline: true },
-                { name: 'Requested by', value: `<@${song.requester.id}>`, inline: true }
+                { name: 'Up Next', value: queueText }
             )
-            .setThumbnail(song.thumbnail || null)
+            .setThumbnail(song.thumbnail)
             .setColor('#FFA500')
-            .setTimestamp();
+            .setFooter({ 
+                text: `Track requested by @${song.requester.username}`,
+                iconURL: song.requester.displayAvatarURL({ dynamic: true })
+            });
 
         const row = new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()
-                    .setCustomId('music_previous')
-                    .setLabel('Previous')
-                    .setStyle(ButtonStyle.Secondary)
-                    .setEmoji('⏮️'),
-                new ButtonBuilder()
                     .setCustomId('music_pause')
-                    .setLabel('Pause')
                     .setStyle(ButtonStyle.Success)
                     .setEmoji('⏸️'),
                 new ButtonBuilder()
+                    .setCustomId('music_previous')
+                    .setStyle(ButtonStyle.Secondary)
+                    .setEmoji('⏮️'),
+                new ButtonBuilder()
                     .setCustomId('music_skip')
-                    .setLabel('Skip')
                     .setStyle(ButtonStyle.Primary)
                     .setEmoji('⏭️'),
                 new ButtonBuilder()
                     .setCustomId('music_stop')
-                    .setLabel('Stop')
                     .setStyle(ButtonStyle.Danger)
                     .setEmoji('⏹️'),
                 new ButtonBuilder()
                     .setCustomId('music_queue')
-                    .setLabel('Queue')
                     .setStyle(ButtonStyle.Secondary)
-                    .setEmoji('📜')
+                    .setEmoji('📋')
             );
 
         const msg = await channel.send({ embeds: [embed], components: [row] });
@@ -182,49 +237,53 @@ class MusicManager {
 
         const song = queue.songs[queue.currentIndex];
 
+        // Build upcoming queue text
+        let queueText = '';
+        const upcoming = queue.songs.slice(queue.currentIndex + 1, queue.currentIndex + 6);
+        if (upcoming.length > 0) {
+            queueText = upcoming.map((s, i) => `${i + 1}. [${s.title}](${s.url}) [${s.duration}]`).join('\n');
+        } else {
+            queueText = '*No upcoming songs*';
+        }
+
         const embed = new EmbedBuilder()
             .setAuthor({
-                name: '🎵 Now playing',
+                name: isPaused ? '⏸ Paused' : '▶ Now Playing',
                 iconURL: song.requester.displayAvatarURL({ dynamic: true })
             })
-            .setDescription(`***[${song.title}](${song.url})***`)
+            .setDescription(`[${song.title}](${song.url}) [${song.duration}]`)
             .addFields(
-                { name: 'Artist', value: song.author || 'Unknown', inline: true },
-                { name: 'Duration', value: song.duration || 'Unknown', inline: true },
-                { name: 'Requested by', value: `<@${song.requester.id}>`, inline: true },
-                { name: 'Status', value: isPaused ? '⏸️ Paused' : '▶️ Playing', inline: true }
+                { name: 'Up Next', value: queueText }
             )
-            .setThumbnail(song.thumbnail || null)
+            .setThumbnail(song.thumbnail)
             .setColor('#FFA500')
-            .setTimestamp();
+            .setFooter({ 
+                text: `Track requested by @${song.requester.username}`,
+                iconURL: song.requester.displayAvatarURL({ dynamic: true })
+            });
 
         const row = new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()
-                    .setCustomId('music_previous')
-                    .setLabel('Previous')
-                    .setStyle(ButtonStyle.Secondary)
-                    .setEmoji('⏮️'),
-                new ButtonBuilder()
                     .setCustomId('music_pause')
-                    .setLabel(isPaused ? 'Resume' : 'Pause')
                     .setStyle(ButtonStyle.Success)
                     .setEmoji(isPaused ? '▶️' : '⏸️'),
                 new ButtonBuilder()
+                    .setCustomId('music_previous')
+                    .setStyle(ButtonStyle.Secondary)
+                    .setEmoji('⏮️'),
+                new ButtonBuilder()
                     .setCustomId('music_skip')
-                    .setLabel('Skip')
                     .setStyle(ButtonStyle.Primary)
                     .setEmoji('⏭️'),
                 new ButtonBuilder()
                     .setCustomId('music_stop')
-                    .setLabel('Stop')
                     .setStyle(ButtonStyle.Danger)
                     .setEmoji('⏹️'),
                 new ButtonBuilder()
                     .setCustomId('music_queue')
-                    .setLabel('Queue')
                     .setStyle(ButtonStyle.Secondary)
-                    .setEmoji('📜')
+                    .setEmoji('📋')
             );
 
         await queue.currentMessage.edit({ embeds: [embed], components: [row] });
@@ -292,7 +351,30 @@ class MusicManager {
         return false;
     }
 
-    stop(guildId) {
+    // Stop but keep connection (for button)
+    stopOnly(guildId) {
+        const queue = this.getQueue(guildId);
+        const player = this.players.get(guildId);
+        
+        if (queue?.currentMessage) {
+            queue.currentMessage.delete().catch(() => {});
+        }
+        
+        if (player) {
+            player.stop();
+        }
+        
+        queue.songs = [];
+        queue.currentIndex = 0;
+        queue.playing = false;
+        queue.currentMessage = null;
+        queue.history = [];
+        
+        return true;
+    }
+
+    // Stop and leave (for /stop command)
+    stopAndLeave(guildId) {
         this.cleanup(guildId);
     }
 

@@ -19,12 +19,7 @@ export async function execute(interaction) {
         });
     }
 
-    musicManager.stop(interaction.guild.id);
+    musicManager.stopAndLeave(interaction.guild.id);
     
-    const connection = getVoiceConnection(interaction.guild.id);
-    if (connection) {
-        connection.destroy();
-    }
-
     await interaction.reply('⏹️ Stopped the music, cleared the queue, and left the voice channel');
 }

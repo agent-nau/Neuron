@@ -16,20 +16,20 @@
   "author": "Agent-Nau",
   "license": "NEURON DISCORD BOT LICENSE AGREEMENT (NDBLA)",
   "dependencies": {
+    "@discordjs/voice": "^0.17.0",
     "@types/node": "^22.13.11",
     "discord.js": "^14.25.0",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
+    "ffmpeg-static": "^5.2.0",
+    "libsodium-wrappers": "^0.7.11",
     "node-cron": "^4.2.1",
     "node-fetch": "^3.3.2",
-    "puter": "^1.0.0",
-    "@discordjs/voice": "^0.17.0",
     "opusscript": "^0.0.8",
     "play-dl": "latest",
-    "yt-search": "^2.12.1",
+    "puter": "^1.0.0",
     "sodium-native": "^4.0.4",
-    "libsodium-wrappers": "^0.7.11",
-    "ffmpeg-static": "^5.2.0"
+    "yt-search": "^2.13.1"
   },
   "engines": {
     "node": ">=16.0.0"
