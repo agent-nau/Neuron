@@ -26,13 +26,12 @@ class MusicManager {
 
     async play(guildId, channel, voiceChannel, query, requester) {
         const queue = this.getQueue(guildId);
-        
-        // Force search via SoundCloud to completely bypass YouTube IP bans
+
         const searchResult = await play.search(query, { source: { soundcloud: 'tracks' }, limit: 1 });
         if (!searchResult || !searchResult.length) return null;
-        
-        video = searchResult[0];
-        
+
+        const video = searchResult[0];
+
         const song = {
             title: video.name || video.title || 'Unknown Title',
             url: video.url,
@@ -104,7 +103,7 @@ class MusicManager {
         }
 
         const song = queue.songs[queue.currentIndex];
-        
+
         try {
             const stream = await play.stream(song.url);
             const resource = createAudioResource(stream.stream, {
@@ -130,11 +129,11 @@ class MusicManager {
         }
 
         const embed = new EmbedBuilder()
-            .setAuthor({ 
-                name: '|  Now playing', 
-                iconURL: song.requester.displayAvatarURL({ dynamic: true }) 
+            .setAuthor({
+                name: '🎵 Now playing',
+                iconURL: song.requester.displayAvatarURL({ dynamic: true })
             })
-            .setDescription(`**[${song.title}](${song.url})**`)
+            .setDescription(`***[${song.title}](${song.url})***`)
             .addFields(
                 { name: 'Artist', value: song.author || 'Unknown', inline: true },
                 { name: 'Duration', value: song.duration || 'Unknown', inline: true },
@@ -147,21 +146,30 @@ class MusicManager {
         const row = new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()
+                    .setCustomId('music_previous')
+                    .setLabel('Previous')
+                    .setStyle(ButtonStyle.Secondary)
+                    .setEmoji('⏮️'),
+                new ButtonBuilder()
                     .setCustomId('music_pause')
-                    .setLabel('Pause & Resume')
-                    .setStyle(ButtonStyle.Success),
+                    .setLabel('Pause')
+                    .setStyle(ButtonStyle.Success)
+                    .setEmoji('⏸️'),
                 new ButtonBuilder()
                     .setCustomId('music_skip')
                     .setLabel('Skip')
-                    .setStyle(ButtonStyle.Primary),
+                    .setStyle(ButtonStyle.Primary)
+                    .setEmoji('⏭️'),
                 new ButtonBuilder()
                     .setCustomId('music_stop')
                     .setLabel('Stop')
-                    .setStyle(ButtonStyle.Danger),
+                    .setStyle(ButtonStyle.Danger)
+                    .setEmoji('⏹️'),
                 new ButtonBuilder()
                     .setCustomId('music_queue')
-                    .setLabel('Show Queue')
+                    .setLabel('Queue')
                     .setStyle(ButtonStyle.Secondary)
+                    .setEmoji('📜')
             );
 
         const msg = await channel.send({ embeds: [embed], components: [row] });
@@ -173,13 +181,13 @@ class MusicManager {
         if (!queue.currentMessage || !queue.songs[queue.currentIndex]) return;
 
         const song = queue.songs[queue.currentIndex];
-        
+
         const embed = new EmbedBuilder()
-            .setAuthor({ 
-                name: '|  Now playing', 
-                iconURL: song.requester.displayAvatarURL({ dynamic: true }) 
+            .setAuthor({
+                name: '🎵 Now playing',
+                iconURL: song.requester.displayAvatarURL({ dynamic: true })
             })
-            .setDescription(`**[${song.title}](${song.url})**`)
+            .setDescription(`***[${song.title}](${song.url})***`)
             .addFields(
                 { name: 'Artist', value: song.author || 'Unknown', inline: true },
                 { name: 'Duration', value: song.duration || 'Unknown', inline: true },
@@ -193,21 +201,30 @@ class MusicManager {
         const row = new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()
-                    .setCustomId(isPaused ? 'music_resume' : 'music_pause')
-                    .setLabel(isPaused ? 'Resume' : 'Pause & Resume')
-                    .setStyle(ButtonStyle.Success),
+                    .setCustomId('music_previous')
+                    .setLabel('Previous')
+                    .setStyle(ButtonStyle.Secondary)
+                    .setEmoji('⏮️'),
+                new ButtonBuilder()
+                    .setCustomId('music_pause')
+                    .setLabel(isPaused ? 'Resume' : 'Pause')
+                    .setStyle(ButtonStyle.Success)
+                    .setEmoji(isPaused ? '▶️' : '⏸️'),
                 new ButtonBuilder()
                     .setCustomId('music_skip')
                     .setLabel('Skip')
-                    .setStyle(ButtonStyle.Primary),
+                    .setStyle(ButtonStyle.Primary)
+                    .setEmoji('⏭️'),
                 new ButtonBuilder()
                     .setCustomId('music_stop')
                     .setLabel('Stop')
-                    .setStyle(ButtonStyle.Danger),
+                    .setStyle(ButtonStyle.Danger)
+                    .setEmoji('⏹️'),
                 new ButtonBuilder()
                     .setCustomId('music_queue')
-                    .setLabel('Show Queue')
+                    .setLabel('Queue')
                     .setStyle(ButtonStyle.Secondary)
+                    .setEmoji('📜')
             );
 
         await queue.currentMessage.edit({ embeds: [embed], components: [row] });
@@ -215,13 +232,13 @@ class MusicManager {
 
     handleSongEnd(guildId, textChannel) {
         const queue = this.getQueue(guildId);
-        
+
         if (queue.songs[queue.currentIndex]) {
             queue.history.push(queue.songs[queue.currentIndex]);
         }
 
         queue.currentIndex++;
-        
+
         if (queue.currentIndex < queue.songs.length) {
             this.playSong(guildId, textChannel);
         } else if (queue.loop) {
@@ -242,7 +259,7 @@ class MusicManager {
 
     playPrevious(guildId, textChannel) {
         const queue = this.getQueue(guildId);
-        
+
         if (queue.history.length > 0) {
             const prevSong = queue.history.pop();
             queue.songs.splice(queue.currentIndex, 0, prevSong);
@@ -276,22 +293,18 @@ class MusicManager {
     }
 
     stop(guildId) {
-        const queue = this.getQueue(guildId);
-        if (queue.currentMessage) {
-            queue.currentMessage.delete().catch(() => {});
-        }
         this.cleanup(guildId);
     }
 
     getQueueList(guildId) {
         const queue = this.getQueue(guildId);
         const current = queue.songs[queue.currentIndex];
-        
+
         let description = '';
         if (current) {
             description += `**Now Playing:**\n[${current.title}](${current.url}) | \`${current.duration}\` | <@${current.requester.id}>\n\n`;
         }
-        
+
         const upcoming = queue.songs.slice(queue.currentIndex + 1, queue.currentIndex + 11);
         if (upcoming.length) {
             description += `**Upcoming (${upcoming.length} songs):**\n`;
@@ -301,23 +314,29 @@ class MusicManager {
         } else {
             description += '*No upcoming songs*';
         }
-        
+
         return description;
     }
 
     cleanup(guildId) {
         const connection = this.connections.get(guildId);
         const player = this.players.get(guildId);
-        
-        if (connection) {
-            connection.destroy();
-            this.connections.delete(guildId);
+        const queue = this.queues.get(guildId);
+
+        if (queue?.currentMessage) {
+            queue.currentMessage.delete().catch(() => {});
         }
+
         if (player) {
             player.stop();
             this.players.delete(guildId);
         }
-        
+
+        if (connection) {
+            connection.destroy();
+            this.connections.delete(guildId);
+        }
+
         this.queues.delete(guildId);
     }
 }

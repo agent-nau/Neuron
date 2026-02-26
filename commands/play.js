@@ -17,17 +17,17 @@ export async function execute(interaction) {
     const voiceChannel = interaction.member.voice.channel;
 
     if (!voiceChannel) {
-        return interaction.reply({ 
-            content: '❌ You need to be in a voice channel!', 
-            ephemeral: true 
+        return interaction.reply({
+            content: '❌ You need to be in a voice channel!',
+            ephemeral: true
         });
     }
 
     const permissions = voiceChannel.permissionsFor(interaction.client.user);
     if (!permissions.has('Connect') || !permissions.has('Speak')) {
-        return interaction.reply({ 
-            content: '❌ I need permissions to join and speak in your voice channel!', 
-            ephemeral: true 
+        return interaction.reply({
+            content: '❌ I need permissions to join and speak in your voice channel!',
+            ephemeral: true
         });
     }
 
@@ -47,7 +47,7 @@ export async function execute(interaction) {
         }
 
         const queue = musicManager.getQueue(interaction.guild.id);
-        
+
         if (queue.songs.length > 1) {
             const position = queue.songs.length - 1;
             await interaction.editReply({

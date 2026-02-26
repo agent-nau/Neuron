@@ -9,7 +9,7 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction) {
     const queueList = musicManager.getQueueList(interaction.guild.id);
-    
+
     const embed = new EmbedBuilder()
         .setTitle('🎵 Music Queue')
         .setDescription(queueList)
