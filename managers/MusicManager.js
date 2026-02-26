@@ -85,10 +85,10 @@ class MusicManager {
             requester: requester
         };
 
-        const wasEmpty = queue.songs.length === 0;
         queue.songs.push(song);
 
-        if (!queue.playing && !this.players.has(guildId)) {
+        // Connect and play if not currently playing or no active connection
+        if (!queue.playing || !this.connections.has(guildId)) {
             await this.connectAndPlay(guildId, voiceChannel, channel);
             return { song, position: 0, isNowPlaying: true };
         } else {
@@ -380,6 +380,14 @@ class MusicManager {
         
         if (player) {
             player.stop();
+            this.players.delete(guildId);
+        }
+
+        // Also destroy the voice connection so next /play reconnects cleanly
+        const connection = this.connections.get(guildId);
+        if (connection) {
+            connection.destroy();
+            this.connections.delete(guildId);
         }
         
         queue.songs = [];

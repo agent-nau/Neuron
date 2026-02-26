@@ -6,6 +6,7 @@ import {
   ButtonBuilder,
   ButtonStyle,
   EmbedBuilder,
+  MessageFlags,
 } from "discord.js";
 
 export const name = "interactionCreate";
@@ -52,7 +53,7 @@ export async function execute(i, { warnings, verifSettings, verifCodes, joinSett
       const guildId = parts.slice(2).join("_") || i.guildId;
       const settings = verifSettings.get(guildId);
       if (!settings) {
-        return await i.reply({ content: "❌ This verification panel is not properly configured.", ephemeral: true });
+        return await i.reply({ content: "❌ This verification panel is not properly configured.", flags: MessageFlags.Ephemeral });
       }
 
       const code = generateCode(6);
@@ -71,7 +72,7 @@ export async function execute(i, { warnings, verifSettings, verifCodes, joinSett
           .setStyle(ButtonStyle.Success)
       );
 
-      return await i.reply({ embeds: [embed], components: [openModalButton], ephemeral: true });
+      return await i.reply({ embeds: [embed], components: [openModalButton], flags: MessageFlags.Ephemeral });
     }
 
     // 🧩 Verification: open modal
@@ -79,7 +80,7 @@ export async function execute(i, { warnings, verifSettings, verifCodes, joinSett
       const parts = i.customId.split("_");
       const userId = parts.slice(3).join("_");
       if (i.user.id !== userId) {
-        return await i.reply({ content: "❌ You cannot open this modal for another user.", ephemeral: true });
+        return await i.reply({ content: "❌ You cannot open this modal for another user.", flags: MessageFlags.Ephemeral });
       }
 
       const modal = new ModalBuilder()
@@ -102,27 +103,27 @@ export async function execute(i, { warnings, verifSettings, verifCodes, joinSett
       const parts = i.customId.split("_");
       const userId = parts.slice(2).join("_");
       if (i.user.id !== userId) {
-        return await i.reply({ content: "❌ Unauthorized modal submission.", ephemeral: true });
+        return await i.reply({ content: "❌ Unauthorized modal submission.", flags: MessageFlags.Ephemeral });
       }
 
       const entry = verifCodes.get(i.user.id);
       if (!entry) {
-        return await i.reply({ content: "❌ No verification started or code expired.", ephemeral: true });
+        return await i.reply({ content: "❌ No verification started or code expired.", flags: MessageFlags.Ephemeral });
       }
 
       if (Date.now() > entry.expiresAt) {
         verifCodes.delete(i.user.id);
-        return await i.reply({ content: "❌ Code expired. Please try again.", ephemeral: true });
+        return await i.reply({ content: "❌ Code expired. Please try again.", flags: MessageFlags.Ephemeral });
       }
 
       const value = i.fields.getTextInputValue("code_input").trim();
       if (value !== entry.code) {
-        return await i.reply({ content: "❌ Incorrect code. Please try again.", ephemeral: true });
+        return await i.reply({ content: "❌ Incorrect code. Please try again.", flags: MessageFlags.Ephemeral });
       }
 
       const settings = verifSettings.get(entry.guildId);
       if (!settings) {
-        return await i.reply({ content: "❌ Guild verification settings no longer exist.", ephemeral: true });
+        return await i.reply({ content: "❌ Guild verification settings no longer exist.", flags: MessageFlags.Ephemeral });
       }
 
       try {
@@ -132,10 +133,10 @@ export async function execute(i, { warnings, verifSettings, verifCodes, joinSett
           await member.roles.remove(settings.unverifiedRoleId);
         } catch {}
         verifCodes.delete(i.user.id);
-        return await i.reply({ content: "✅ Verification successful! Roles updated.", ephemeral: true });
+        return await i.reply({ content: "✅ Verification successful! Roles updated.", flags: MessageFlags.Ephemeral });
       } catch (err) {
         console.error("Verification role update error:", err);
-        return await i.reply({ content: "❌ Failed to update roles. Check bot permissions.", ephemeral: true });
+        return await i.reply({ content: "❌ Failed to update roles. Check bot permissions.", flags: MessageFlags.Ephemeral });
       }
     }
 
