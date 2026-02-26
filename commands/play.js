@@ -14,7 +14,10 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction) {
     const query = interaction.options.getString('song');
-    const voiceChannel = interaction.member.voice.channel;
+    
+    // Fetch fresh member to ensure voice state is current
+    const member = await interaction.guild.members.fetch(interaction.user.id);
+    const voiceChannel = member.voice.channel;
 
     if (!voiceChannel) {
         return interaction.reply({

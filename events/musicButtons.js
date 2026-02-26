@@ -9,9 +9,10 @@ export async function execute(interaction) {
     const action = interaction.customId.replace('music_', '');
     const guildId = interaction.guild.id;
 
-    // Check voice channel membership
-    const voiceChannel = interaction.member.voice.channel;
-    
+    // Fetch fresh member data to ensure voice state is current
+    const member = await interaction.guild.members.fetch(interaction.user.id);
+    const voiceChannel = member.voice.channel;
+
     if (!voiceChannel) {
         return interaction.reply({
             content: '❌ You need to be in a voice channel!',
@@ -20,8 +21,8 @@ export async function execute(interaction) {
     }
 
     // Check if bot is in a voice channel
-    const botMember = interaction.guild.members.cache.get(interaction.client.user.id);
-    const botVoiceChannel = botMember?.voice?.channel;
+    const botMember = await interaction.guild.members.fetch(interaction.client.user.id);
+    const botVoiceChannel = botMember.voice.channel;
 
     // If bot is in a voice channel, user must be in the same one
     if (botVoiceChannel && voiceChannel.id !== botVoiceChannel.id) {
