@@ -1,6 +1,7 @@
 import { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, VoiceConnectionStatus, StreamType } from '@discordjs/voice';
-import play from 'play-dl';
+import ytdl from '@distube/ytdl-core';
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import fetch from 'node-fetch';
 
 class MusicManager {
     constructor() {
@@ -25,42 +26,49 @@ class MusicManager {
     }
 
     async searchSong(query) {
-        let video = null;
-
         try {
-            // Check if it's a YouTube URL
-            if (play.yt_validate(query) === 'video') {
-                const info = await play.video_info(query);
-                const details = info.video_details;
-                video = {
-                    title: details.title || 'Unknown Title',
-                    url: details.url,
-                    duration: this.formatDuration(details.durationInSec || 0),
-                    durationSec: details.durationInSec || 0,
-                    thumbnail: details.thumbnails?.[0]?.url || null,
-                    author: details.channel?.name || 'Unknown'
-                };
-            } else {
-                // Search YouTube
-                const results = await play.search(query, { limit: 1, source: { youtube: 'video' } });
-                if (results && results.length > 0) {
-                    const first = results[0];
-                    video = {
-                        title: first.title || 'Unknown Title',
-                        url: first.url,
-                        duration: this.formatDuration(first.durationInSec || 0),
-                        durationSec: first.durationInSec || 0,
-                        thumbnail: first.thumbnails?.[0]?.url || null,
-                        author: first.channel?.name || 'Unknown'
-                    };
-                }
+            let url = query;
+            
+            // Check if it's already a YouTube URL
+            const isYouTubeUrl = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/.test(query);
+            
+            if (!isYouTubeUrl) {
+                // If not a URL, we need to find the video.
+                // Since ytdl-core doesn't have search, we'll try a simple search redirect or use ytdl directly if possible.
+                // For now, let's use the search URL trick.
+                const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+                const response = await fetch(searchUrl, {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                    }
+                });
+                const html = await response.text();
+                const match = html.match(/"videoId":"([a-zA-Z0-9_-]{11})"/);
+                if (!match) return null;
+                url = `https://www.youtube.com/watch?v=${match[1]}`;
             }
+
+            const info = await ytdl.getInfo(url, {
+                requestOptions: {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                    }
+                }
+            });
+
+            const details = info.videoDetails;
+            return {
+                title: details.title || 'Unknown Title',
+                url: details.video_url,
+                duration: this.formatDuration(parseInt(details.lengthSeconds) || 0),
+                durationSec: parseInt(details.lengthSeconds) || 0,
+                thumbnail: details.thumbnails?.[details.thumbnails.length - 1]?.url || null,
+                author: details.author?.name || 'Unknown'
+            };
         } catch (error) {
             console.error('Search error:', error);
             return null;
         }
-
-        return video;
     }
 
     formatDuration(seconds) {
@@ -153,14 +161,20 @@ class MusicManager {
         const song = queue.songs[queue.currentIndex];
 
         try {
-            // Use play-dl to stream — bypasses YouTube bot detection
-            const stream = await play.stream(song.url, {
-                quality: 2,           // 0 = low, 1 = medium, 2 = high
-                discordPlayerCompatibility: true
+            const stream = ytdl(song.url, {
+                filter: 'audioonly',
+                quality: 'highestaudio',
+                highWaterMark: 1 << 26, // 64MB buffer for stability
+                dlChunkSize: 0,
+                requestOptions: {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                    }
+                }
             });
 
-            const resource = createAudioResource(stream.stream, {
-                inputType: stream.type,
+            const resource = createAudioResource(stream, {
+                inputType: StreamType.Arbitrary,
                 inlineVolume: true
             });
 
