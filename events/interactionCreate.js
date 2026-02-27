@@ -13,13 +13,7 @@ export const name = "interactionCreate";
 
 export async function execute(i, { warnings, verifSettings, verifCodes, joinSettings, generateCode, client }) {
   try {
-    // Slash commands
-
-    if (i.isChatInputCommand()) {
-      const command = client.commands.get(i.commandName);
-      if (!command) return;
-      await command.execute(i, { warnings, verifSettings, verifCodes, joinSettings });
-    }
+    // Slash commands are handled in index.js
 
     // 📖 Help menu category selection
     if (i.isStringSelectMenu() && i.customId === "help-category") {

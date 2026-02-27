@@ -132,6 +132,9 @@ const skip = {
 
         musicManager.playNext(interaction.guild.id, interaction.channel);
         await interaction.reply('⏭️ Skipped to the next song!');
+        setTimeout(() => {
+            interaction.deleteReply();
+        }, 6000);
     }
 };
 
@@ -150,6 +153,9 @@ const stop = {
 
         musicManager.stopAndLeave(interaction.guild.id);
         await interaction.reply('⏹️ Stopped the music, cleared the queue, and left the voice channel');
+        setTimeout(() => {
+            interaction.deleteReply();
+        }, 6000);
     }
 };
 

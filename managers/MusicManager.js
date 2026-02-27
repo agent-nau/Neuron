@@ -1,15 +1,20 @@
 import { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, VoiceConnectionStatus, StreamType } from '@discordjs/voice';
-import ytdl from '@distube/ytdl-core';
+import play from 'play-dl';
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
-import fetch from 'node-fetch';
 import fs from 'node:fs';
 
-// Load cookies from cookies.json if it exists
-let youtubeCookies = null;
+// Load cookies if they exist
 try {
     if (fs.existsSync('./cookies.json')) {
-        youtubeCookies = JSON.parse(fs.readFileSync('./cookies.json', 'utf8'));
-        console.log('✅ Loaded YouTube cookies from cookies.json');
+        const cookies = JSON.parse(fs.readFileSync('./cookies.json', 'utf8'));
+        // play-dl can take cookies as a string
+        const cookieString = cookies.map(c => `${c.name}=${c.value}`).join('; ');
+        await play.setToken({
+            youtube: {
+                cookie: cookieString
+            }
+        });
+        console.log('✅ Loaded YouTube cookies into play-dl');
     }
 } catch (error) {
     console.error('❌ Error loading cookies.json:', error);
@@ -39,56 +44,31 @@ class MusicManager {
 
     async searchSong(query) {
         try {
-            let url = query;
+            // Check if it's a YouTube URL
+            const isYouTubeUrl = play.yt_validate(query) === 'video';
             
-            // Check if it's already a YouTube URL
-            const isYouTubeUrl = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/.test(query);
-            
-            if (!isYouTubeUrl) {
-                // If not a URL, we need to find the video.
-                // Since ytdl-core doesn't have search, we'll try a simple search redirect or use ytdl directly if possible.
-                // For now, let's use the search URL trick.
-                const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
-                const response = await fetch(searchUrl, {
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                        cookie: youtubeCookies ? youtubeCookies.map(c => `${c.name}=${c.value}`).join('; ') : ''
-                    }
-                });
-                const html = await response.text();
-                const match = html.match(/"videoId":"([a-zA-Z0-9_-]{11})"/);
-                if (!match) return null;
-                url = `https://www.youtube.com/watch?v=${match[1]}`;
+            let video;
+            if (isYouTubeUrl) {
+                const info = await play.video_info(query);
+                video = info.video_details;
+            } else {
+                const searchResults = await play.search(query, { limit: 1 });
+                if (!searchResults.length) return null;
+                video = searchResults[0];
             }
 
-            const info = await ytdl.getInfo(url, {
-                requestOptions: {
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                        cookie: youtubeCookies ? youtubeCookies.map(c => `${c.name}=${c.value}`).join('; ') : ''
-                    }
-                }
-            });
-
-            const details = info.videoDetails;
             return {
-                title: details.title || 'Unknown Title',
-                url: details.video_url,
-                duration: this.formatDuration(parseInt(details.lengthSeconds) || 0),
-                durationSec: parseInt(details.lengthSeconds) || 0,
-                thumbnail: details.thumbnails?.[details.thumbnails.length - 1]?.url || null,
-                author: details.author?.name || 'Unknown'
+                title: video.title || 'Unknown Title',
+                url: video.url,
+                duration: video.durationRaw || '0:00',
+                durationSec: video.durationInSec || 0,
+                thumbnail: video.thumbnails?.[video.thumbnails.length - 1]?.url || null,
+                author: video.channel?.name || 'Unknown'
             };
         } catch (error) {
             console.error('Search error:', error);
             return null;
         }
-    }
-
-    formatDuration(seconds) {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
     }
 
     async play(guildId, channel, voiceChannel, query, requester) {
@@ -98,12 +78,12 @@ class MusicManager {
         if (!video) return null;
 
         const song = {
-            title: video.title || 'Unknown Title',
+            title: video.title,
             url: video.url,
-            duration: video.duration || 'Unknown',
-            durationSec: video.durationSec || 0,
-            thumbnail: video.thumbnail || null,
-            author: video.author || 'Unknown',
+            duration: video.duration,
+            durationSec: video.durationSec,
+            thumbnail: video.thumbnail,
+            author: video.author,
             requester: requester
         };
 
@@ -175,21 +155,10 @@ class MusicManager {
         const song = queue.songs[queue.currentIndex];
 
         try {
-            const stream = ytdl(song.url, {
-                filter: 'audioonly',
-                quality: 'highestaudio',
-                highWaterMark: 1 << 26, // 64MB buffer for stability
-                dlChunkSize: 0,
-                requestOptions: {
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                        cookie: youtubeCookies ? youtubeCookies.map(c => `${c.name}=${c.value}`).join('; ') : ''
-                    }
-                }
-            });
-
-            const resource = createAudioResource(stream, {
-                inputType: StreamType.Arbitrary,
+            const stream = await play.stream(song.url);
+            
+            const resource = createAudioResource(stream.stream, {
+                inputType: stream.type,
                 inlineVolume: true
             });
 
