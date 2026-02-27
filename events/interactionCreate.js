@@ -13,7 +13,24 @@ export const name = "interactionCreate";
 
 export async function execute(i, { warnings, verifSettings, verifCodes, joinSettings, generateCode, client }) {
   try {
-    // Slash commands are handled in index.js
+    // 🚀 Slash Command Handling
+    if (i.isChatInputCommand()) {
+      const command = client.commands.get(i.commandName);
+      if (!command) return;
+
+      try {
+        await command.execute(i);
+      } catch (error) {
+        console.error(`Error executing command ${i.commandName}:`, error);
+        const errorMessage = { content: '❌ There was an error while executing this command!', flags: MessageFlags.Ephemeral };
+        if (i.deferred || i.replied) {
+          await i.editReply(errorMessage);
+        } else {
+          await i.reply(errorMessage);
+        }
+      }
+      return;
+    }
 
     // 📖 Help menu category selection
     if (i.isStringSelectMenu() && i.customId === "help-category") {
