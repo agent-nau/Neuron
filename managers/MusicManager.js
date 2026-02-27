@@ -2,6 +2,18 @@ import { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerSt
 import ytdl from '@distube/ytdl-core';
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import fetch from 'node-fetch';
+import fs from 'node:fs';
+
+// Load cookies from cookies.json if it exists
+let youtubeCookies = null;
+try {
+    if (fs.existsSync('./cookies.json')) {
+        youtubeCookies = JSON.parse(fs.readFileSync('./cookies.json', 'utf8'));
+        console.log('✅ Loaded YouTube cookies from cookies.json');
+    }
+} catch (error) {
+    console.error('❌ Error loading cookies.json:', error);
+}
 
 class MusicManager {
     constructor() {
@@ -39,7 +51,8 @@ class MusicManager {
                 const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
                 const response = await fetch(searchUrl, {
                     headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                        cookie: youtubeCookies ? youtubeCookies.map(c => `${c.name}=${c.value}`).join('; ') : ''
                     }
                 });
                 const html = await response.text();
@@ -51,7 +64,8 @@ class MusicManager {
             const info = await ytdl.getInfo(url, {
                 requestOptions: {
                     headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                        cookie: youtubeCookies ? youtubeCookies.map(c => `${c.name}=${c.value}`).join('; ') : ''
                     }
                 }
             });
@@ -168,7 +182,8 @@ class MusicManager {
                 dlChunkSize: 0,
                 requestOptions: {
                     headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                        cookie: youtubeCookies ? youtubeCookies.map(c => `${c.name}=${c.value}`).join('; ') : ''
                     }
                 }
             });

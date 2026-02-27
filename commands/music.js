@@ -32,6 +32,15 @@ const play = {
         .setDefaultMemberPermissions(PermissionFlagsBits.Connect),
 
     async execute(interaction) {
+        // Immediately defer reply to prevent 3s timeout
+        try {
+            await interaction.deferReply();
+        } catch (error) {
+            console.error('Failed to defer reply:', error);
+            // If defer fails, we likely can't respond at all
+            return;
+        }
+
         const query = interaction.options.getString('song');
 
         // Fetch fresh member to ensure voice state is current
@@ -39,21 +48,17 @@ const play = {
         const voiceChannel = member.voice.channel;
 
         if (!voiceChannel) {
-            return interaction.reply({
-                content: '❌ You need to be in a voice channel!',
-                flags: MessageFlags.Ephemeral
+            return interaction.editReply({
+                content: '❌ You need to be in a voice channel!'
             });
         }
 
         const permissions = voiceChannel.permissionsFor(interaction.client.user);
         if (!permissions.has('Connect') || !permissions.has('Speak')) {
-            return interaction.reply({
-                content: '❌ I need permissions to join and speak in your voice channel!',
-                flags: MessageFlags.Ephemeral
+            return interaction.editReply({
+                content: '❌ I need permissions to join and speak in your voice channel!'
             });
         }
-
-        await interaction.deferReply();
 
         try {
             const result = await musicManager.play(
