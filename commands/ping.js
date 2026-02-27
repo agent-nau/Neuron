@@ -8,9 +8,9 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(i) {
   await i.reply(`🏓 Pong! ${i.client.ws.ping}ms`);
+  // will delete the reply after 6 seconds
+  setTimeout(() => {
+    i.deleteReply().catch(console.error);
+  }, 6000);
 }
 
-// will delete the reply after 6 seconds
-setTimeout(() => {
-  i.deleteReply();
-}, 6000);
