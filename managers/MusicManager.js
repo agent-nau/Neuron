@@ -52,8 +52,12 @@ class MusicManager {
                 const info = await play.video_info(query);
                 video = info.video_details;
             } else {
-                const searchResults = await play.search(query, { limit: 1 });
-                if (!searchResults.length) return null;
+                // Specify source as youtube to be explicit
+                const searchResults = await play.search(query, { 
+                    limit: 1,
+                    source: { youtube: 'video' }
+                });
+                if (!searchResults || searchResults.length === 0) return null;
                 video = searchResults[0];
             }
 

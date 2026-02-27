@@ -1,6 +1,6 @@
 import { ActivityType, REST, Routes } from "discord.js";
 
-export const name = "ready";
+export const name = "clientReady";
 export const once = true;
 
 export async function execute(client) {
