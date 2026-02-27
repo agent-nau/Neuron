@@ -32,10 +32,22 @@ const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith("
 for (const file of commandFiles) {
     const filePath = path.join(commandsPath, file);
     try {
-        const command = await import(filePath);
-        if ('data' in command && 'execute' in command) {
-            client.commands.set(command.data.name, command);
-            console.log(`✅ Loaded command: ${command.data.name}`);
+        const module = await import(filePath);
+
+        // Multi-command file: exports a `commands` array
+        if (Array.isArray(module.commands)) {
+            for (const command of module.commands) {
+                if ('data' in command && 'execute' in command) {
+                    client.commands.set(command.data.name, command);
+                    console.log(`✅ Loaded command: ${command.data.name}`);
+                } else {
+                    console.log(`⚠️  Skipping invalid command entry in ${file}`);
+                }
+            }
+        // Single-command file: exports `data` and `execute` directly
+        } else if ('data' in module && 'execute' in module) {
+            client.commands.set(module.data.name, module);
+            console.log(`✅ Loaded command: ${module.data.name}`);
         } else {
             console.log(`❌ Command at ${filePath} is missing "data" or "execute" property.`);
         }

@@ -29,8 +29,7 @@
     "play-dl": "1.9.7",
     "opusscript": "^0.0.8",
     "puter": "^1.0.0",
-    "sodium-native": "^4.3.1",
-    "yt-search": "^2.12.1"
+    "sodium-native": "^4.3.1"
   },
   "engines": {
     "node": ">=16.0.0"
