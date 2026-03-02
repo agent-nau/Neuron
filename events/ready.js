@@ -17,31 +17,32 @@ export async function execute(client) {
     console.error("❌ Command registration error:", e);
   }
 
-  // Load ratings for status
-  const ratingData = await loadRatings();
-  const ratingText = ratingData.total_reviews > 0 
-    ? `⭐ ${ratingData.average_rating.toFixed(1)} (${ratingData.total_reviews})`
+  // Function to get current rating text formatted consistently
+  const getRatingText = (data) => data.total_reviews > 0 
+    ? `⭐ ${data.average_rating.toFixed(1)} (${data.total_reviews})`
     : "⭐ New!";
 
-  const statuses = [
+  const baseStatuses = [
     { name: "Made by Lecs @ Vecs Corp.", type: ActivityType.Playing },
     { name: "/help for commands", type: ActivityType.Listening },
     { name: `Protected ${client.guilds.cache.size} Servers!`, type: ActivityType.Watching },
-    { name: ratingText, type: ActivityType.Custom }, // Shows as "⭐ 4.9 (142)"
   ];
 
   let i = 0;
-  setInterval(() => {
-    // Refresh rating every rotation to keep it updated
-    if (statuses[i].name.startsWith("⭐")) {
-      loadRatings().then(data => {
-        if (data.total_reviews > 0) {
-          statuses[i].name = `⭐ ${data.average_rating.toFixed(1)} (${data.total_reviews})`;
-        }
-      });
-    }
+  setInterval(async () => {
+    // Refresh everything for the update
+    const ratingData = await loadRatings();
+    const ratingText = getRatingText(ratingData);
     
-    client.user.setPresence({ activities: [statuses[i]], status: "idle" });
-    i = (i + 1) % statuses.length;
+    const activity = baseStatuses[i];
+    client.user.setPresence({ 
+      activities: [{ 
+        name: `${activity.name} | ${ratingText}`, 
+        type: activity.type 
+      }], 
+      status: "idle" 
+    });
+
+    i = (i + 1) % baseStatuses.length;
   }, 15000);
 }

@@ -13,6 +13,14 @@ export const data = new SlashCommandBuilder()
     );
 
 export async function execute(interaction) {
+    // Restrict to support server
+    if (process.env.SUPPORT_GUILD_ID && interaction.guildId !== process.env.SUPPORT_GUILD_ID) {
+        return interaction.reply({
+            content: '❌ This command can only be used in the support server.',
+            ephemeral: true
+        });
+    }
+
     const targetChannel = interaction.options.getChannel('channel') || interaction.channel;
     const ratingManager = new RatingManager(interaction.client);
     

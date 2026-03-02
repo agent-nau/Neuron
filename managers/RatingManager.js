@@ -26,11 +26,7 @@ export class RatingManager {
         const embed = new EmbedBuilder()
             .setColor(0x5865F2) // Discord blurple
             .setTitle('⭐ Rate Neuron')
-            .setDescription('Click **Rate Bot** below to submit your anonymous review.\n\nYour feedback helps us improve!')
-            .setFooter({ 
-                text: `⭐ ${data.average_rating.toFixed(1)} · ${data.total_reviews} reviews`, 
-                iconURL: this.client.user.displayAvatarURL() 
-            });
+            .setDescription('Click **Rate Bot** below to submit your anonymous review.\n\nYour feedback helps us improve!');
 
         const row = new ActionRowBuilder()
             .addComponents(
@@ -58,6 +54,15 @@ export class RatingManager {
             .setRequired(true)
             .setMaxLength(1);
 
+        const anonymousInput = new TextInputBuilder()
+            .setCustomId('anonymous_option')
+            .setLabel('Anonymous? (Yes/No)')
+            .setStyle(TextInputStyle.Short)
+            .setPlaceholder('Type "No" to show your name and profile')
+            .setRequired(true)
+            .setValue('Yes')
+            .setMaxLength(3);
+
         const commentInput = new TextInputBuilder()
             .setCustomId('rating_comment')
             .setLabel('Comment (Optional)')
@@ -68,6 +73,7 @@ export class RatingManager {
 
         modal.addComponents(
             new ActionRowBuilder().addComponents(starInput),
+            new ActionRowBuilder().addComponents(anonymousInput),
             new ActionRowBuilder().addComponents(commentInput)
         );
 
@@ -99,11 +105,16 @@ export class RatingManager {
             data.ratings.splice(existingIndex, 1);
         }
 
+        // Handle anonymity preference
+        const anonInput = interaction.fields.getTextInputValue('anonymous_option').toLowerCase();
+        const isAnonymous = anonInput !== 'no';
+
         // Add new rating
         data.ratings.push({
             userId: interaction.user.id,
             stars: stars,
             comment: comment,
+            anonymous: isAnonymous,
             timestamp: new Date().toISOString()
         });
 
@@ -114,7 +125,7 @@ export class RatingManager {
         await saveRatings(data);
 
         // Log to channel
-        await this.logRating(interaction.guild, stars, comment, data.average_rating, isUpdate);
+        await this.logRating(interaction.guild, stars, comment, data.average_rating, isUpdate, interaction.user, isAnonymous);
 
         // Update bot presence
         await this.updateBotPresence(data);
@@ -126,16 +137,17 @@ export class RatingManager {
         });
     }
 
-    // Send anonymous rating to log channel
-    async logRating(guild, stars, comment, currentAvg, isUpdate = false) {
+    // Send rating to log channel
+    async logRating(guild, stars, comment, currentAvg, isUpdate = false, user = null, isAnonymous = true) {
         const channelId = await getRatingsChannel(guild.id);
         const logChannel = channelId ? guild.channels.cache.get(channelId) : null;
         
         if (!logChannel) return;
 
+        const titlePrefix = isAnonymous ? 'Anonymous' : 'Public';
         const embed = new EmbedBuilder()
             .setColor(this.getRatingColor(stars))
-            .setTitle(`🎫 ${isUpdate ? 'Updated' : 'New'} Anonymous Rating`)
+            .setTitle(`⭐ ${isUpdate ? 'Updated' : 'New'} ${titlePrefix} Rating`)
             .addFields(
                 { 
                     name: 'Rating Given', 
@@ -150,9 +162,16 @@ export class RatingManager {
             )
             .setTimestamp();
 
+        if (!isAnonymous && user) {
+            embed.setAuthor({ 
+                name: user.tag, 
+                iconURL: user.displayAvatarURL() 
+            });
+        }
+
         if (comment) {
             embed.addFields({ 
-                name: 'Anonymous Comment', 
+                name: isAnonymous ? 'Anonymous Comment' : 'Comment', 
                 value: `> ${comment.substring(0, 1000)}` 
             });
         }

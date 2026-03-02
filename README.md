@@ -70,6 +70,16 @@
 - Role management (`/addrole` `/removerole`)
 
 </td>
+<td width="20%" valign="top">
+
+### ⭐ **Feedback**
+
+- Anonymous/Public ratings
+- Persistent rating status
+- Support server logs
+- Verification modals
+
+</td>
 </tr>
 </table>
 
@@ -97,12 +107,14 @@
 
 <div align="center">
 
-| Command                    | Description                  | Usage                      | Permission    |
-| :------------------------- | :--------------------------- | :------------------------- | :------------ |
-| `/verify setup #channel`   | Create verification panel    | `/verify setup #verify`    | Administrator |
-| `/ticket setup #category`  | Setup ticket system          | `/ticket setup #tickets`   | Administrator |
-| `/autojoin setup #channel` | Configure welcome messages   | `/autojoin setup #welcome` | Administrator |
-| `/reactionrole setup`      | Create reaction role message | `/reactionrole setup`      | Manage Roles  |
+| Command                    | Description                  | Usage                      | Permission                          |
+| :------------------------- | :--------------------------- | :------------------------- | :---------------------------------- |
+| `/verify setup #channel`   | Create verification panel    | `/verify setup #verify`    | Administrator                       |
+| `/ticket setup #category`  | Setup ticket system          | `/ticket setup #tickets`   | Administrator                       |
+| `/autojoin setup #channel` | Configure welcome messages   | `/autojoin setup #welcome` | Administrator                       |
+| `/reactionrole setup`      | Create reaction role message | `/reactionrole setup`      | Manage Roles                        |
+| `/ratingsetup [channel]`   | Post rating panel (Support)  | `/ratingsetup`             | Administrator (Support Server Only) |
+| `/ratingchannel [channel]` | Set rating log (Support)     | `/ratingchannel #logs`     | Administrator (Support Server Only) |
 
 </div>
 
@@ -170,6 +182,24 @@ node-cron - Scheduled birthday greetings
 Native Fetch - Built-in HTTP requests (Node 18+)
 </p>
 </b>
+
+---
+
+<b>
+<p align="center">
+ ⚙️ Configuration
+</p>
+</b>
+
+<div align="center">
+
+| Variable            | Description                                |
+| :------------------ | :----------------------------------------- |
+| `DISCORD_BOT_TOKEN` | Your bot's secret token                    |
+| `SUPPORT_GUILD_ID`  | ID of the server where setup commands work |
+| `SUPPORT_LINK`      | Invite link for the support server         |
+
+</div>
 
 ---
 
