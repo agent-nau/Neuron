@@ -191,15 +191,6 @@ Native Fetch - Built-in HTTP requests (Node 18+)
 </p>
 </b>
 
-<div align="center">
-
-| Variable            | Description                                |
-| :------------------ | :----------------------------------------- |
-| `DISCORD_BOT_TOKEN` | Your bot's secret token                    |
-| `SUPPORT_LINK`      | Invite link for the support server         |
-
-</div>
-
 ---
 
 <b>
