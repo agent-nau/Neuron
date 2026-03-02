@@ -196,7 +196,6 @@ Native Fetch - Built-in HTTP requests (Node 18+)
 | Variable            | Description                                |
 | :------------------ | :----------------------------------------- |
 | `DISCORD_BOT_TOKEN` | Your bot's secret token                    |
-| `SUPPORT_GUILD_ID`  | ID of the server where setup commands work |
 | `SUPPORT_LINK`      | Invite link for the support server         |
 
 </div>
