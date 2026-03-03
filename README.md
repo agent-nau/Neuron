@@ -187,32 +187,9 @@ Native Fetch - Built-in HTTP requests (Node 18+)
 
 ---
 
-<b>
-<p align="center">
- ⚙️ Configuration
-</p>
-</b>
-
-<div align="center">
-
-| Variable            | Description                                |
-| :------------------ | :----------------------------------------- |
-| `DISCORD_BOT_TOKEN` | Your bot's secret token                    |
-| `SUPPORT_GUILD_ID`  | ID of the server where setup commands work |
-| `SUPPORT_LINK`      | Invite link for the support server         |
-
-</div>
-
----
-
-<b>
-<p align="center">
- 📄 License
-</p>
-</b>
 
 <p align="center">
-  <b>Distributed under the <a href="https://github.com/agent-nau/Neuron/blob/main/LICENSE">NDBLA Licence 1.0</a></b>
+  <b>Distributed under the <a href="https://github.com/agent-nau/Neuron/blob/main-branch/LICENSE">NDBLA Licence 1.0</a></b>
 </p>
 
 ---
