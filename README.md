@@ -67,6 +67,7 @@
 - Custom embed builder (`/embed`)
 - YouTube converter (`/convert`)
 - Birthday scheduler (`/birthday`)
+- Random memes (`/meme-setup`)
 - Role management (`/addrole` `/removerole`)
 
 </td>
@@ -134,6 +135,7 @@
 | `/ping`                                          | Check bot latency and API response time                                          | `/ping`                                                   | —              |
 | `/invite`                                        | Get bot invite link for your server                                              | `/invite`                                                 | —              |
 | `/help`                                          | Display full help menu with all commands                                         | `/help`                                                   | —              |
+| `/meme-setup`                                    | Fetch random trending memes from Reddit (r/memes)                                | `/meme-setup`                                             | Administrator  |
 
 </div>
 
