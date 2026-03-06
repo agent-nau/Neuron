@@ -5,38 +5,43 @@ const DEFAULT_SUBREDDIT = "memes";
 
 // Shared function to fetch and build the meme response
 async function fetchMeme() {
+  const url = 'https://reddit-meme.p.rapidapi.com/memes/trending';
+  const options = {
+    method: 'GET',
+    headers: {
+      'x-rapidapi-key': 'f391b6ae8bmsh30d518346caa257p12f928jsn342a0a39b90e',
+      'x-rapidapi-host': 'reddit-meme.p.rapidapi.com'
+    }
+  };
+
   try {
-    const response = await fetch(`https://www.reddit.com/r/${DEFAULT_SUBREDDIT}/hot.json?limit=50`, {
-      headers: { 'User-Agent': 'DiscordBot/1.0' }
-    });
+    const response = await fetch(url, options);
+    if (!response.ok) throw new Error('Failed to fetch from RapidAPI');
     
-    if (!response.ok) throw new Error('Failed to fetch from Reddit');
+    // Most likely it's an array of meme objects
+    const memes = await response.json();
     
-    const data = await response.json();
-    const posts = data.data.children.filter(post => 
-      !post.data.is_self && 
-      !post.data.stickied &&
-      (post.data.url.endsWith('.jpg') || 
-       post.data.url.endsWith('.jpeg') ||
-       post.data.url.endsWith('.png') || 
-       post.data.url.endsWith('.gif') ||
-       post.data.url.includes('i.redd.it') ||
-       post.data.url.includes('i.imgur'))
-    );
+    if (!Array.isArray(memes) || memes.length === 0) {
+      return { content: '❌ No memes found in the trending list!', embeds: [], components: [] };
+    }
 
-    if (posts.length === 0) return { content: '❌ No image posts found!', embeds: [], components: [] };
-
-    const randomPost = posts[Math.floor(Math.random() * posts.length)].data;
+    const randomMeme = memes[Math.floor(Math.random() * memes.length)];
     
+    // Map fields from RapidAPI structure (assuming standard post_link, title, url, etc)
+    const title = randomMeme.title?.substring(0, 256) || 'Untitled Meme';
+    const memeUrl = randomMeme.url;
+    const postLink = randomMeme.post_link || '#';
+    const subreddit = randomMeme.subreddit || 'memes';
+
     const embed = new EmbedBuilder()
-      .setTitle(randomPost.title.substring(0, 256))
-      .setURL(`https://reddit.com${randomPost.permalink}`)
-      .setImage(randomPost.url)
+      .setTitle(title)
+      .setURL(postLink)
+      .setImage(memeUrl)
       .setColor(0xFF5700)
       .setFooter({ 
-        text: `👍 ${randomPost.ups} | 💬 ${randomPost.num_comments} | u/${randomPost.author}`
+        text: `r/${subreddit} | Powered by RapidAPI`
       })
-      .setTimestamp(new Date(randomPost.created_utc * 1000));
+      .setTimestamp();
 
     const row = new ActionRowBuilder()
       .addComponents(
@@ -45,7 +50,7 @@ async function fetchMeme() {
           .setLabel('🎲 Next Meme')
           .setStyle(ButtonStyle.Primary),
         new ButtonBuilder()
-          .setURL(`https://reddit.com${randomPost.permalink}`)
+          .setURL(postLink.startsWith('http') ? postLink : 'https://reddit.com')
           .setLabel('View on Reddit')
           .setStyle(ButtonStyle.Link)
       );
@@ -53,8 +58,8 @@ async function fetchMeme() {
     return { embeds: [embed], components: [row] };
 
   } catch (error) {
-    console.error(error);
-    return { content: '❌ Failed to fetch meme! (Reddit API might be down)', embeds: [], components: [] };
+    console.error('RapidAPI Meme Error:', error);
+    return { content: '❌ Failed to fetch meme from RapidAPI! Check API key or connection.', embeds: [], components: [] };
   }
 }
 
