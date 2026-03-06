@@ -25,45 +25,47 @@ export const data = new SlashCommandBuilder()
   .setDescription('Get a random trending meme from Reddit');
 
 export async function execute(interaction) {
+  // Acknowledge immediately to prevent 10062 errors
   await interaction.deferReply();
 
-  try {
-    const meme = await fetchMeme();
-    
-    const embed = new EmbedBuilder()
-      .setTitle(meme.title?.substring(0, 256) || 'Meme')
+  const meme = await fetchMeme();
+  
+  const embed = new EmbedBuilder()
+    .setTitle(meme.title?.substring(0, 255) || 'Meme')
+    .setURL(meme.post_link || 'https://reddit.com')
+    .setImage(meme.url)
+    .setColor(0xFF4500)
+    .setFooter({ text: `r/${meme.subreddit || 'memes'} | Trending` })
+    .setTimestamp();
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('meme_next')
+      .setLabel('🎲 Next Meme')
+      .setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
       .setURL(meme.post_link || 'https://reddit.com')
-      .setImage(meme.url)
-      .setColor(0xFF4500)
-      .setFooter({ text: `r/${meme.subreddit || 'memes'} | Trending` })
-      .setTimestamp();
+      .setLabel('View on Reddit')
+      .setStyle(ButtonStyle.Link)
+  );
 
-    const row = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId('meme_next')
-        .setLabel('🎲 Next Meme')
-        .setStyle(ButtonStyle.Primary),
-      new ButtonBuilder()
-        .setURL(meme.post_link || 'https://reddit.com')
-        .setLabel('View on Reddit')
-        .setStyle(ButtonStyle.Link)
-    );
-
-    await interaction.editReply({ embeds: [embed], components: [row] });
-  } catch (err) {
-    console.error(err);
-    await interaction.editReply({ content: `❌ Error: ${err.message}` });
-  }
+  await interaction.editReply({ embeds: [embed], components: [row] });
 }
 
 export async function handleInteraction(interaction) {
   if (interaction.isButton() && interaction.customId === 'meme_next') {
     try {
-      await interaction.deferUpdate();
+      try {
+        await interaction.deferUpdate();
+      } catch (deferErr) {
+        if (deferErr.code === 10062 || deferErr.code === 40060) return;
+        throw deferErr;
+      }
+
       const meme = await fetchMeme();
 
       const embed = new EmbedBuilder()
-        .setTitle(meme.title?.substring(0, 256) || 'Meme')
+        .setTitle(meme.title?.substring(0, 255) || 'Meme')
         .setURL(meme.post_link || 'https://reddit.com')
         .setImage(meme.url)
         .setColor(0xFF4500)
@@ -83,8 +85,13 @@ export async function handleInteraction(interaction) {
 
       await interaction.editReply({ embeds: [embed], components: [row] });
     } catch (err) {
-      console.error(err);
-      // Don't use followUp since it's a button update, just log or edit with error
+      console.error(`Meme button error:`, err);
+      // Quietly fail if interaction is too old
+      if (err.code !== 10062 && err.code !== 40060) {
+        try {
+          await interaction.followUp({ content: '❌ Outdated interaction, please use /meme again.', flags: MessageFlags.Ephemeral });
+        } catch {}
+      }
     }
   }
 }

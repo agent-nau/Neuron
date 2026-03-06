@@ -7,34 +7,16 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Reuse the same getCategories function
-let categoriesCache = null;
-let lastCacheTime = 0;
-const CACHE_DURATION = 60000; // 1 minute
-
-async function getCategories() {
-    const now = Date.now();
-    if (categoriesCache && (now - lastCacheTime) < CACHE_DURATION) {
-        return categoriesCache;
-    }
-    
-    const commandsPath = path.join(__dirname, '..', 'commands');
-    const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
-    
+async function getCategories(client) {
     const categoryMap = new Map();
     
-    for (const file of commandFiles) {
-        const filePath = path.join(commandsPath, file);
-        const fileUrl = import.meta.resolve(pathToFileURL(filePath).href);
-        const module = await import(fileUrl + '?t=' + now); // Cache bust
-        
-        const command = module.default || module;
-        if (!command.data) continue;
-        
-        const category = module.category || '⚡ Uncategorized';
+    for (const command of client.commands.values()) {
+        const category = command.category || '⚡ Uncategorized';
         const cmdName = `/${command.data.name}`;
         const desc = command.data.description;
         
         let usage = cmdName;
+        // Check for options in the slash command data
         if (command.data.options?.length) {
             usage += ' ' + command.data.options.map(opt => 
                 opt.required ? `<${opt.name}>` : `[${opt.name}]`
@@ -48,21 +30,18 @@ async function getCategories() {
         categoryMap.get(category).push({ name: cmdName, desc, usage });
     }
     
-    categoriesCache = Array.from(categoryMap.entries())
+    return Array.from(categoryMap.entries())
         .sort((a, b) => a[0].localeCompare(b[0]))
         .map(([name, commands]) => ({ name, commands }));
-    
-    lastCacheTime = now;
-    return categoriesCache;
 }
 
 export const name = Events.InteractionCreate;
 
-export async function execute(interaction) {
+export async function execute(interaction, { client }) {
     if (!interaction.isButton()) return;
         if (!interaction.customId.startsWith('help_')) return;
         
-        const categories = await getCategories();
+        const categories = await getCategories(client);
         const totalPages = categories.length;
         const [_, action, current] = interaction.customId.split('_');
         let page = parseInt(current);

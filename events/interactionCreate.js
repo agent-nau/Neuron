@@ -17,10 +17,20 @@ export async function execute(i, { warnings, verifSettings, verifCodes, joinSett
       } catch (error) {
         console.error(`Error executing command ${i.commandName}:`, error);
         const errorMessage = { content: '❌ There was an error while executing this command!', flags: MessageFlags.Ephemeral };
-        if (i.deferred || i.replied) {
-          await i.editReply(errorMessage);
-        } else {
-          await i.reply(errorMessage);
+        
+        try {
+          if (i.replied || i.deferred) {
+            await i.editReply(errorMessage);
+          } else {
+            await i.reply(errorMessage);
+          }
+        } catch (innerError) {
+          // If the reply itself fails because it's already acknowledged or unknown, just log it quietly
+          if (innerError.code === 40060 || innerError.code === 10062) {
+            console.warn(`[Quiet] Could not send error reply to ${i.commandName}: ${innerError.message}`);
+          } else {
+            console.error(`[Fatal] Failed to send error reply to ${i.commandName}:`, innerError);
+          }
         }
       }
       return;
@@ -57,6 +67,8 @@ export async function execute(i, { warnings, verifSettings, verifCodes, joinSett
         if (typeof command.handleInteraction === 'function') {
           try {
             await command.handleInteraction(i, { warnings, verifSettings, verifCodes, joinSettings, generateCode, client });
+            // If the command handled the interaction, stop looking
+            if (i.replied || i.deferred) break;
           } catch (error) {
             console.error(`Error in handleInteraction for command:`, error);
           }
