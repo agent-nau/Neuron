@@ -89,6 +89,21 @@ export async function handleInteraction(interaction) {
           { id: interaction.user.id, allow: ['ViewChannel', 'SendMessages'] }
         ]
       });
+
+      const embed = new EmbedBuilder()
+        .setTitle('🎫 Ticket Created')
+        .setDescription(`Hello ${interaction.user}, thanks for opening a ticket! Our staff will be with you shortly.\n\nYou can close this ticket using the button below.`)
+        .setColor(0x00FF00);
+      
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`ticket_close_${interaction.user.id}`)
+          .setLabel('Close Ticket')
+          .setStyle(ButtonStyle.Danger)
+      );
+
+      await ticketChannel.send({ embeds: [embed], components: [row] });
+
       return await interaction.reply({ content: `✅ Ticket created: ${ticketChannel}`, flags: MessageFlags.Ephemeral });
     }
 
@@ -241,6 +256,31 @@ export async function handleInteraction(interaction) {
 
       return await interaction.update({ embeds: [logEmbed], components: [] });
     }
+
+    // --- Ticket Close Modal ---
+    if (interaction.customId.startsWith('ticket_close_modal_')) {
+      const ownerId = interaction.customId.split('_').pop();
+      const reason = interaction.fields.getTextInputValue('reason');
+
+      const owner = await interaction.client.users.fetch(ownerId).catch(() => null);
+      await interaction.channel.permissionOverwrites.edit(ownerId, { ViewChannel: false });
+      await interaction.channel.setName(`closed-${owner ? owner.username : 'user'}`);
+
+      const embed = new EmbedBuilder()
+        .setTitle('🔒 Ticket Closed')
+        .setDescription(`**Reason:** ${reason}\n**Closed by:** ${interaction.user}`)
+        .setColor(0xFF0000)
+        .setTimestamp();
+      
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`ticket_open_${ownerId}`)
+          .setLabel('Re-open Ticket')
+          .setStyle(ButtonStyle.Success)
+      );
+
+      return await interaction.reply({ embeds: [embed], components: [row] });
+    }
   }
 
   // 3. BUTTONS
@@ -262,6 +302,37 @@ export async function handleInteraction(interaction) {
       const input = new TextInputBuilder().setCustomId('dev_comment').setLabel('Your comment to the user').setStyle(TextInputStyle.Paragraph).setRequired(true);
       modal.addComponents(new ActionRowBuilder().addComponents(input));
       return await interaction.showModal(modal);
+    }
+
+    // --- Ticket Buttons ---
+    if (action === 'ticket') {
+      const subAction = parts[1]; // 'close' or 'open'
+      const ownerId = parts[2];
+
+      if (subAction === 'close') {
+        const modal = new ModalBuilder()
+          .setCustomId(`ticket_close_modal_${ownerId}`)
+          .setTitle('Close Ticket');
+        const input = new TextInputBuilder()
+          .setCustomId('reason')
+          .setLabel('Reason for closing')
+          .setStyle(TextInputStyle.Paragraph)
+          .setRequired(true);
+        modal.addComponents(new ActionRowBuilder().addComponents(input));
+        return await interaction.showModal(modal);
+      }
+
+      if (subAction === 'open') {
+        if (!interaction.member.permissions.has(PermissionFlagsBits.ManageChannels)) {
+          return await interaction.reply({ content: '❌ Only staff can re-open tickets!', flags: MessageFlags.Ephemeral });
+        }
+
+        const owner = await interaction.client.users.fetch(ownerId).catch(() => null);
+        await interaction.channel.permissionOverwrites.edit(ownerId, { ViewChannel: true });
+        await interaction.channel.setName(`ticket-${owner ? owner.username : 'user'}`);
+        
+        await interaction.reply({ content: '🔓 Ticket re-opened by staff.' });
+      }
     }
   }
 }
