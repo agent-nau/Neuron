@@ -16,18 +16,19 @@ async function fetchMeme() {
 
   try {
     const response = await fetch(url, options);
-    if (!response.ok) throw new Error('Failed to fetch from RapidAPI');
+    if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
     
-    // Most likely it's an array of meme objects
-    const memes = await response.json();
+    // API might return an array or an object with a 'memes' property
+    const data = await response.json();
+    const memes = Array.isArray(data) ? data : (data.memes || []);
     
-    if (!Array.isArray(memes) || memes.length === 0) {
+    if (memes.length === 0) {
       return { content: '❌ No memes found in the trending list!', embeds: [], components: [] };
     }
 
     const randomMeme = memes[Math.floor(Math.random() * memes.length)];
     
-    // Map fields from RapidAPI structure (assuming standard post_link, title, url, etc)
+    // Fallback values for common fields
     const title = randomMeme.title?.substring(0, 256) || 'Untitled Meme';
     const memeUrl = randomMeme.url;
     const postLink = randomMeme.post_link || '#';
@@ -59,7 +60,7 @@ async function fetchMeme() {
 
   } catch (error) {
     console.error('RapidAPI Meme Error:', error);
-    return { content: '❌ Failed to fetch meme from RapidAPI! Check API key or connection.', embeds: [], components: [] };
+    return { content: `❌ Failed to fetch meme from RapidAPI: ${error.message}`, embeds: [], components: [] };
   }
 }
 
