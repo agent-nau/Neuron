@@ -5,7 +5,9 @@ import {
   StringSelectMenuBuilder,
   ModalBuilder,
   TextInputBuilder,
-  TextInputStyle
+  TextInputStyle,
+  ButtonBuilder,
+  ButtonStyle
 } from 'discord.js';
 import { QuickDB } from 'quick.db';
 
@@ -16,20 +18,26 @@ export const data = new SlashCommandBuilder()
   .setDescription('Ticket/Ratings/Suggestions/Reports panel system')
   .addSubcommand(sub =>
     sub.setName('setup')
-      .setDescription('Post panel')
-      .addChannelOption(o =>
-        o.setName('channel')
-          .setDescription('Channel to post the panel')
-          .setRequired(true))
-      .addChannelOption(o =>
-        o.setName('category')
-          .setDescription('Category where tickets will be created')
-          .setRequired(true))
+      .setDescription('Post panel and configure log channels')
+      .addChannelOption(o => o.setName('channel').setDescription('Channel to post the panel').setRequired(true))
+      .addChannelOption(o => o.setName('category').setDescription('Category where tickets will be created').setRequired(true))
+      .addChannelOption(o => o.setName('rating_logs').setDescription('Channel for rating logs').setRequired(true))
+      .addChannelOption(o => o.setName('suggestion_logs').setDescription('Channel for suggestion logs').setRequired(true))
+      .addChannelOption(o => o.setName('report_logs').setDescription('Channel for report logs').setRequired(true))
   );
 
 export async function execute(interaction) {
   const channel = interaction.options.getChannel('channel');
   const category = interaction.options.getChannel('category');
+  const ratingLogs = interaction.options.getChannel('rating_logs');
+  const suggestionLogs = interaction.options.getChannel('suggestion_logs');
+  const reportLogs = interaction.options.getChannel('report_logs');
+
+  await db.set(`guild_${interaction.guild.id}_config`, {
+    rating_logs: ratingLogs.id,
+    suggestion_logs: suggestionLogs.id,
+    report_logs: reportLogs.id
+  });
 
   const panelEmbed = new EmbedBuilder()
     .setTitle('📋 Support Panel')
@@ -142,31 +150,120 @@ export async function handleInteraction(interaction) {
 
   // Handle modal submissions
   if (interaction.isModalSubmit()) {
+    const config = await db.get(`guild_${interaction.guild.id}_config`);
+
     if (interaction.customId === 'ratings_modal') {
       const rating = interaction.fields.getTextInputValue('rating_value');
-      const comment = interaction.fields.getTextInputValue('rating_comment');
-      const anon = interaction.fields.getTextInputValue('rating_anon').toLowerCase();
+      const comment = interaction.fields.getTextInputValue('rating_comment') || 'No comment';
+      const anon = interaction.fields.getTextInputValue('rating_anon').toLowerCase() === 'yes';
 
-      await db.push('ratings', {
-        user: interaction.user.id,
-        rating,
-        comment,
-        anonymous: anon === 'yes'
-      });
+      const logEmbed = new EmbedBuilder()
+        .setTitle('🌟 New Rating')
+        .addFields(
+          { name: 'User', value: anon ? 'Anonymous' : `<@${interaction.user.id}>` },
+          { name: 'Rating', value: `${rating}/5` },
+          { name: 'Comment', value: comment }
+        )
+        .setColor(0x00FF00)
+        .setTimestamp();
+
+      const logChannel = interaction.guild.channels.cache.get(config?.rating_logs);
+      if (logChannel) await logChannel.send({ embeds: [logEmbed] });
 
       await interaction.reply({ content: '✅ Rating submitted!', ephemeral: true });
     }
 
     if (interaction.customId === 'suggestions_modal') {
       const suggestion = interaction.fields.getTextInputValue('suggestion_text');
-      await db.push('suggestions', { user: interaction.user.id, suggestion });
+
+      const logEmbed = new EmbedBuilder()
+        .setTitle('💡 New Suggestion')
+        .setAuthor({ name: interaction.user.tag, iconURL: interaction.user.displayAvatarURL() })
+        .setDescription(suggestion)
+        .setColor(0xFFFF00)
+        .setFooter({ text: `User ID: ${interaction.user.id}` })
+        .setTimestamp();
+
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId(`approve_suggestion_${interaction.user.id}`).setLabel('Approve').setStyle(ButtonStyle.Success),
+        new ButtonBuilder().setCustomId(`deny_suggestion_${interaction.user.id}`).setLabel('Deny').setStyle(ButtonStyle.Danger)
+      );
+
+      const logChannel = interaction.guild.channels.cache.get(config?.suggestion_logs);
+      if (logChannel) await logChannel.send({ embeds: [logEmbed], components: [row] });
+
       await interaction.reply({ content: '💡 Suggestion submitted!', ephemeral: true });
     }
 
     if (interaction.customId === 'reports_modal') {
       const report = interaction.fields.getTextInputValue('report_text');
-      await db.push('reports', { user: interaction.user.id, report });
+
+      const logEmbed = new EmbedBuilder()
+        .setTitle('🚨 New Report')
+        .setAuthor({ name: interaction.user.tag, iconURL: interaction.user.displayAvatarURL() })
+        .setDescription(report)
+        .setColor(0xFF0000)
+        .setFooter({ text: `User ID: ${interaction.user.id}` })
+        .setTimestamp();
+
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId(`solve_report_${interaction.user.id}`).setLabel('Mark Solved').setStyle(ButtonStyle.Success),
+        new ButtonBuilder().setCustomId(`unsolved_report_${interaction.user.id}`).setLabel('Mark Unsolved').setStyle(ButtonStyle.Danger)
+      );
+
+      const logChannel = interaction.guild.channels.cache.get(config?.report_logs);
+      if (logChannel) await logChannel.send({ embeds: [logEmbed], components: [row] });
+
       await interaction.reply({ content: '🚨 Report submitted!', ephemeral: true });
+    }
+
+    // Dev response modals
+    if (interaction.customId.startsWith('dev_comment_modal_')) {
+      const [,,, type, action, userId] = interaction.customId.split('_');
+      const comment = interaction.fields.getTextInputValue('dev_comment');
+      const user = await interaction.client.users.fetch(userId).catch(() => null);
+
+      const status = action === 'approve' || action === 'solve' ? '✅ accepted/solved' : '❌ denied/unsolved';
+      
+      const responseEmbed = new EmbedBuilder()
+        .setTitle(`Update on your ${type}`)
+        .setDescription(`Your ${type} has been **${status}**.`)
+        .addFields({ name: 'Developer Comment', value: comment })
+        .setColor(action === 'approve' || action === 'solve' ? 0x00FF00 : 0xFF0000)
+        .setTimestamp();
+
+      if (user) {
+        await user.send({ embeds: [responseEmbed] }).catch(() => {
+          interaction.channel.send(`⚠️ Could not DM <@${userId}>.`);
+        });
+      }
+
+      // Update the log message
+      const oldEmbed = EmbedBuilder.from(interaction.message.embeds[0]);
+      oldEmbed.addFields({ name: `Dev Decision: ${action.toUpperCase()}`, value: comment });
+      oldEmbed.setColor(action === 'approve' || action === 'solve' ? 0x00FF00 : 0xFF0000);
+
+      await interaction.update({ embeds: [oldEmbed], components: [] });
+    }
+  }
+
+  // Handle Button Interactions (Dev review)
+  if (interaction.isButton()) {
+    const [action, type, userId] = interaction.customId.split('_');
+    
+    if (['approve', 'deny', 'solve', 'unsolved'].includes(action)) {
+      const modal = new ModalBuilder()
+        .setCustomId(`dev_comment_modal_${type}_${action}_${userId}`)
+        .setTitle('Add Developer Comment');
+
+      const commentInput = new TextInputBuilder()
+        .setCustomId('dev_comment')
+        .setLabel('Your comment to the user')
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(true);
+
+      modal.addComponents(new ActionRowBuilder().addComponents(commentInput));
+      await interaction.showModal(modal);
     }
   }
 }

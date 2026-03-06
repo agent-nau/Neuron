@@ -151,6 +151,20 @@ export async function execute(i, { warnings, verifSettings, verifCodes, joinSett
       }
     }
 
+    // 📩 Handle Command-specific Interactions (Buttons, Modals, Select Menus)
+    // This allows commands like panel.js to handle their own events
+    if (!i.isChatInputCommand()) {
+      for (const command of client.commands.values()) {
+        if (typeof command.handleInteraction === 'function') {
+          try {
+            await command.handleInteraction(i);
+          } catch (error) {
+            console.error(`Error in handleInteraction for command:`, error);
+          }
+        }
+      }
+    }
+
   } catch (error) {
     console.error("interactionCreate error:", error);
   }
