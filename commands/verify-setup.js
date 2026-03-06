@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, ChannelType, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, PermissionFlagsBits } from "discord.js";
+import { SlashCommandBuilder, ChannelType, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, PermissionFlagsBits, MessageFlags } from "discord.js";
 
 export const category = "Verification";
 
@@ -32,7 +32,7 @@ export async function execute(interaction) {
     );
 
     await channel.send({ embeds: [embed], components: [row] });
-    await interaction.reply({ content: "✅ Verification panel posted. This panel is stateless and will work even after bot restarts!", ephemeral: true });
+    await interaction.reply({ content: "✅ Verification panel posted. This panel is stateless and will work even after bot restarts!", flags: MessageFlags.Ephemeral });
   }
 }
 
@@ -59,12 +59,12 @@ export async function handleInteraction(interaction, { generateCode, verifCodes 
         .setStyle(ButtonStyle.Success)
     );
 
-    return await interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+    return await interaction.reply({ embeds: [embed], components: [row], flags: MessageFlags.Ephemeral });
   }
 
   if (interaction.isButton() && interaction.customId.startsWith("verif_modal_open_")) {
     const userId = interaction.customId.split("_")[3];
-    if (interaction.user.id !== userId) return await interaction.reply({ content: "❌ Not your session.", ephemeral: true });
+    if (interaction.user.id !== userId) return await interaction.reply({ content: "❌ Not your session.", flags: MessageFlags.Ephemeral });
 
     const modal = new ModalBuilder().setCustomId(`verif_modal_${userId}`).setTitle("Enter Verification Code");
     const input = new TextInputBuilder().setCustomId("code_input").setLabel("Code").setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(8);
@@ -74,16 +74,16 @@ export async function handleInteraction(interaction, { generateCode, verifCodes 
 
   if (interaction.isModalSubmit() && interaction.customId.startsWith("verif_modal_")) {
     const userId = interaction.customId.split("_")[2];
-    if (interaction.user.id !== userId) return await interaction.reply({ content: "❌ Not your session.", ephemeral: true });
+    if (interaction.user.id !== userId) return await interaction.reply({ content: "❌ Not your session.", flags: MessageFlags.Ephemeral });
 
     const entry = verifCodes.get(interaction.user.id);
     if (!entry || Date.now() > entry.expiresAt) {
       verifCodes.delete(interaction.user.id);
-      return await interaction.reply({ content: "❌ Code expired or session not found.", ephemeral: true });
+      return await interaction.reply({ content: "❌ Code expired or session not found.", flags: MessageFlags.Ephemeral });
     }
 
     const value = interaction.fields.getTextInputValue("code_input").trim();
-    if (value !== entry.code) return await interaction.reply({ content: "❌ Incorrect code.", ephemeral: true });
+    if (value !== entry.code) return await interaction.reply({ content: "❌ Incorrect code.", flags: MessageFlags.Ephemeral });
 
     try {
       const member = await interaction.guild.members.fetch(interaction.user.id);
@@ -92,10 +92,10 @@ export async function handleInteraction(interaction, { generateCode, verifCodes 
         try { await member.roles.remove(entry.uRoleId); } catch {}
       }
       verifCodes.delete(interaction.user.id);
-      return await interaction.reply({ content: "✅ Verification successful!", ephemeral: true });
+      return await interaction.reply({ content: "✅ Verification successful!", flags: MessageFlags.Ephemeral });
     } catch (err) {
       console.error(err);
-      return await interaction.reply({ content: "❌ Failed to update roles.", ephemeral: true });
+      return await interaction.reply({ content: "❌ Failed to update roles.", flags: MessageFlags.Ephemeral });
     }
   }
 }

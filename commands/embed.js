@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, ChannelType } from "discord.js";
+import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, ChannelType, MessageFlags } from "discord.js";
 
 const colorMap = {
   red: "#ff0000", blue: "#0000ff", green: "#00ff00", yellow: "#ffff00",
@@ -39,8 +39,8 @@ export async function execute(i) {
 
   try {
     await target.send({ embeds: [embed] });
-    await i.reply({ content: "✅ Embed sent!", ephemeral: true });
+    await i.reply({ content: "✅ Embed sent!", flags: MessageFlags.Ephemeral });
   } catch {
-    await i.reply({ content: "❌ Failed to send embed", ephemeral: true });
+    await i.reply({ content: "❌ Failed to send embed", flags: MessageFlags.Ephemeral });
   }
 }

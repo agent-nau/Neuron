@@ -10,7 +10,8 @@ import {
   ButtonStyle,
   PermissionFlagsBits,
   ChannelType,
-  ThreadAutoArchiveDuration
+  ThreadAutoArchiveDuration,
+  MessageFlags
 } from 'discord.js';
 
 export const data = new SlashCommandBuilder()
@@ -37,7 +38,7 @@ export async function execute(interaction) {
   if (!category) category = channel.parent;
 
   if (!category) {
-    return interaction.reply({ content: '❌ Could not auto-detect a category. Please specify one manually.', ephemeral: true });
+    return interaction.reply({ content: '❌ Could not auto-detect a category. Please specify one manually.', flags: MessageFlags.Ephemeral });
   }
 
   // Encoding: suggPublic_suggDev_repLog_catId
@@ -63,7 +64,7 @@ export async function execute(interaction) {
   
   await interaction.reply({ 
     content: `✅ Panel posted in ${channel}!\n**Stateless Config:**\nPublic Suggs: ${suggPublic}\nDev Suggs: ${suggDev}\nReports: ${reportLogs}\nTickets: ${category}`, 
-    ephemeral: true 
+    flags: MessageFlags.Ephemeral 
   });
 }
 
@@ -88,7 +89,7 @@ export async function handleInteraction(interaction) {
           { id: interaction.user.id, allow: ['ViewChannel', 'SendMessages'] }
         ]
       });
-      return await interaction.reply({ content: `✅ Ticket created: ${ticketChannel}`, ephemeral: true });
+      return await interaction.reply({ content: `✅ Ticket created: ${ticketChannel}`, flags: MessageFlags.Ephemeral });
     }
 
     if (type === 'suggestions') {
@@ -122,7 +123,7 @@ export async function handleInteraction(interaction) {
       const pubChan = interaction.guild.channels.cache.get(pubChanId);
       const devChan = interaction.guild.channels.cache.get(devChanId);
 
-      if (!pubChan || !devChan) return interaction.reply({ content: '❌ Configuration error (Log channels missing).', ephemeral: true });
+      if (!pubChan || !devChan) return interaction.reply({ content: '❌ Configuration error (Log channels missing).', flags: MessageFlags.Ephemeral });
 
       // Create Public Log Message
       const pubEmbed = new EmbedBuilder()
@@ -157,7 +158,7 @@ export async function handleInteraction(interaction) {
       );
 
       await devChan.send({ embeds: [devEmbed], components: [devRow] });
-      return await interaction.reply({ content: '✅ Suggestion submitted to public and developers!', ephemeral: true });
+      return await interaction.reply({ content: '✅ Suggestion submitted to public and developers!', flags: MessageFlags.Ephemeral });
     }
 
     // --- Report Modal ---
@@ -166,7 +167,7 @@ export async function handleInteraction(interaction) {
       const report = interaction.fields.getTextInputValue('text');
       const logChannel = interaction.guild.channels.cache.get(logChannelId);
 
-      if (!logChannel) return interaction.reply({ content: '❌ Log channel not found!', ephemeral: true });
+      if (!logChannel) return interaction.reply({ content: '❌ Log channel not found!', flags: MessageFlags.Ephemeral });
 
       const embed = new EmbedBuilder()
         .setTitle('🚨 New Report')
@@ -182,7 +183,7 @@ export async function handleInteraction(interaction) {
       );
 
       await logChannel.send({ embeds: [embed], components: [row] });
-      return await interaction.reply({ content: '✅ Report submitted!', ephemeral: true });
+      return await interaction.reply({ content: '✅ Report submitted!', flags: MessageFlags.Ephemeral });
     }
 
     // --- Developer Response Modal (Suggestions & Reports) ---

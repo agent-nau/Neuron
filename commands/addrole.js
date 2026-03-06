@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
+import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } from "discord.js";
 
 export const category = "Role Management";
 
@@ -17,6 +17,6 @@ export async function execute(i) {
         await member.roles.add(role);
         await i.reply(`✅ Added role **${role.name}** to **${user.tag}**`);
     } catch {
-        await i.reply({ content: `❌ Unable to add role **${role.name}** to **${user.tag}**`, ephemeral: true });
+        await i.reply({ content: `❌ Unable to add role **${role.name}** to **${user.tag}**`, flags: MessageFlags.Ephemeral });
     }
 }

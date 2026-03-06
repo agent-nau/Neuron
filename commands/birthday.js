@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, EmbedBuilder, ChannelType, PermissionFlagsBits } from "discord.js";
+import { SlashCommandBuilder, EmbedBuilder, ChannelType, PermissionFlagsBits, MessageFlags } from "discord.js";
 
 export const scheduledGreetings = [];
 export let nextGreetId = 1;
@@ -124,7 +124,7 @@ async function execute(interaction) {
     if (sendNow && (hour !== null || minute !== null)) {
         return interaction.reply({
             content: "❌ **Pick one:** `send_now:True` **OR** set `hour`/`minute`, not both!",
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
         });
     }
 
@@ -133,7 +133,7 @@ async function execute(interaction) {
     if (!parsed) {
         return interaction.reply({
             content: "❌ Invalid date! Use: `February 22 2026`, `22/02/2026`, or `2026-02-22`",
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
         });
     }
 
@@ -142,7 +142,7 @@ async function execute(interaction) {
     if (testDate.getDate() !== day || testDate.getMonth() !== month - 1) {
         return interaction.reply({
             content: "❌ Invalid date! That day doesn't exist.",
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
         });
     }
 
@@ -187,7 +187,7 @@ async function execute(interaction) {
         }, 24 * 60 * 60 * 1000); // 24 hours
 
         // Silent reply (no visible message)
-        await interaction.reply({ content: '✅', ephemeral: true });
+        await interaction.reply({ content: '✅', flags: MessageFlags.Ephemeral });
         
         return;
     }
@@ -196,7 +196,7 @@ async function execute(interaction) {
     if (hour === null || minute === null) {
         return interaction.reply({
             content: "❌ Please provide both `hour` and `minute` to schedule, or use `send_now:True`!",
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
         });
     }
 
@@ -205,7 +205,7 @@ async function execute(interaction) {
     if (scheduleDate < new Date()) {
         return interaction.reply({
             content: "❌ That date and time is in the past! Please use a future date.",
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
         });
     }
 
@@ -294,7 +294,7 @@ async function execute(interaction) {
     // Silent confirmation (no visible reply)
     await interaction.reply({ 
         content: `✅ Scheduled for **${name}** on **${dateString}** at **${timeString}**!`,
-        ephemeral: true 
+        flags: MessageFlags.Ephemeral 
     });
 }
 

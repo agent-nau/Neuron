@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
+import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } from "discord.js";
 
 export const category = "Moderation";
 
@@ -34,7 +34,7 @@ export async function execute(interaction) {
   if (!match) {
     return interaction.reply({
       content: "Invalid duration format. Use: 10m, 1h, 1d",
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
   }
 
@@ -56,7 +56,7 @@ export async function execute(interaction) {
     console.error(err);
     interaction.reply({
       content: "Failed to timeout the user.",
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
   }
 }

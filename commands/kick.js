@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
+import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } from "discord.js";
 
 export const category = "Moderation";
 
@@ -18,6 +18,6 @@ export async function execute(i) {
     await member.kick(reason);
     await i.reply(`✅ Kicked **${user.tag}**`);
   } catch {
-    await i.reply({ content: `❌ Unable to kick ${user.tag}`, ephemeral: true });
+    await i.reply({ content: `❌ Unable to kick ${user.tag}`, flags: MessageFlags.Ephemeral });
   }
 }

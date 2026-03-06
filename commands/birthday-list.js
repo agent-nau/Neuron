@@ -1,4 +1,4 @@
-import { SlashCommandBuilder } from "discord.js";
+import { SlashCommandBuilder, MessageFlags } from "discord.js";
 import { scheduledGreetings } from "./birthday.js";
 
 const data = new SlashCommandBuilder()
@@ -17,9 +17,9 @@ async function execute(interaction) {
     if (index === -1) {
         try {
             await interaction.user.send(`❌ Greeting #${greetId} not found.`);
-            return interaction.reply({ content: "📬 Check your DMs!", ephemeral: true });
+            return interaction.reply({ content: "📬 Check your DMs!", flags: MessageFlags.Ephemeral });
         } catch {
-            return interaction.reply({ content: `❌ Greeting #${greetId} not found.`, ephemeral: true });
+            return interaction.reply({ content: `❌ Greeting #${greetId} not found.`, flags: MessageFlags.Ephemeral });
         }
     }
 
@@ -28,9 +28,9 @@ async function execute(interaction) {
     if (greeting.requester !== interaction.user.id) {
         try {
             await interaction.user.send(`❌ You can only delete your own greetings.`);
-            return interaction.reply({ content: "📬 Check your DMs!", ephemeral: true });
+            return interaction.reply({ content: "📬 Check your DMs!", flags: MessageFlags.Ephemeral });
         } catch {
-            return interaction.reply({ content: `❌ You can only delete your own greetings.`, ephemeral: true });
+            return interaction.reply({ content: `❌ You can only delete your own greetings.`, flags: MessageFlags.Ephemeral });
         }
     }
 
@@ -45,9 +45,9 @@ async function execute(interaction) {
 
     try {
         await interaction.user.send(dmMessage);
-        await interaction.reply({ content: "✅ Deleted! Check your DMs!", ephemeral: true });
+        await interaction.reply({ content: "✅ Deleted! Check your DMs!", flags: MessageFlags.Ephemeral });
     } catch {
-        await interaction.reply({ content: dmMessage, ephemeral: true });
+        await interaction.reply({ content: dmMessage, flags: MessageFlags.Ephemeral });
     }
 }
 

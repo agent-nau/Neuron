@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
+import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } from "discord.js";
 
 export const category = "Moderation";
 
@@ -23,7 +23,7 @@ export async function execute(interaction) {
     console.error(err);
     interaction.reply({
       content: "Failed to remove timeout.",
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
   }
 }

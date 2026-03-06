@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
+import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } from "discord.js";
 
 export const category = "Moderation";
 export const data = new SlashCommandBuilder()
@@ -20,6 +20,6 @@ export async function execute(i) {
 
     await i.reply(`🔒 Channel **${locked ? "locked" : "unlocked"}**.`);
   } catch {
-    await i.reply({ content: "❌ Failed to modify permissions", ephemeral: true });
+    await i.reply({ content: "❌ Failed to modify permissions", flags: MessageFlags.Ephemeral });
   }
 }

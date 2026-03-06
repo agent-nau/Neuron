@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
+import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } from "discord.js";
 
 export const category = "Moderation";
 
@@ -12,8 +12,8 @@ export async function execute(i) {
   const amount = i.options.getInteger("amount");
   try {
     await i.channel.bulkDelete(amount, true);
-    await i.reply({ content: `🧹 Deleted ${amount} messages`, ephemeral: true });
+    await i.reply({ content: `🧹 Deleted ${amount} messages`, flags: MessageFlags.Ephemeral });
   } catch {
-    await i.reply({ content: "❌ Cannot delete messages", ephemeral: true });
+    await i.reply({ content: "❌ Cannot delete messages", flags: MessageFlags.Ephemeral });
   }
 }

@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
+import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } from "discord.js";
 
 export const category = "Auto-Assign";
 
@@ -14,9 +14,9 @@ export async function execute(i, joinSettings) {
   if (i.options.getSubcommand() === "setup") {
     const role = i.options.getRole("role");
     joinSettings.set(i.guild.id, { roleId: role.id, enabled: true });
-    await i.reply({ content: `✅ Auto-assign enabled. Users who join will receive the **${role.name}** role.`, ephemeral: true });
+    await i.reply({ content: `✅ Auto-assign enabled. Users who join will receive the **${role.name}** role.`, flags: MessageFlags.Ephemeral });
   } else { // off
     joinSettings.delete(i.guild.id);
-    await i.reply({ content: "✅ Auto-assign disabled for this server.", ephemeral: true });
+    await i.reply({ content: "✅ Auto-assign disabled for this server.", flags: MessageFlags.Ephemeral });
   }
 }

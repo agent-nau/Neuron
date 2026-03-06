@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, PermissionFlagsBits} from "discord.js";
+import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } from "discord.js";
 
 export const category = "Reaction Roles";
 
@@ -19,6 +19,6 @@ export async function execute(i) {
         await msg.react("✅");
         await i.reply(`✅ Reaction role message sent in ${channel} for role **${role.name}**`);
     } catch {
-        await i.reply({ content: "❌ Failed to send reaction role message", ephemeral: true });
+        await i.reply({ content: "❌ Failed to send reaction role message", flags: MessageFlags.Ephemeral });
     }
 }

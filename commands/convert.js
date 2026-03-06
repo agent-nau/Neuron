@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } from 'discord.js';
 
 export const category = "Utility";
 
@@ -20,7 +20,7 @@ async function execute(interaction) {
     if (!videoId) {
         return interaction.reply({
             content: '❌ Invalid YouTube URL.\nExamples:\n• `https://www.youtube.com/watch?v=UxxajLWwzqY`\n• `https://youtu.be/UxxajLWwzqY`',
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
         });
     }
 
@@ -47,7 +47,7 @@ async function execute(interaction) {
         if (data.status !== 'ok' || !data.link) {
             return interaction.editReply({
                 content: `❌ ${data.msg || 'Failed to convert video'}`,
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
 
@@ -113,7 +113,7 @@ async function execute(interaction) {
 
         await interaction.editReply({
             content: errorMsg,
-            ephemeral: true
+            flags: MessageFlags.Ephemeral
         });
     }
 }

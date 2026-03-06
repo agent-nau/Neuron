@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, PermissionFlagsBits, ChannelType } from "discord.js";
+import { SlashCommandBuilder, PermissionFlagsBits, ChannelType, MessageFlags } from "discord.js";
 
 export const category = "Utility";
 
@@ -15,8 +15,8 @@ export async function execute(i) {
 
   try {
     await target.send({ content: msg });
-    await i.reply({ content: "✅ Sent!", ephemeral: true });
+    await i.reply({ content: "✅ Sent!", flags: MessageFlags.Ephemeral });
   } catch {
-    await i.reply({ content: "❌ Failed to send message", ephemeral: true });
+    await i.reply({ content: "❌ Failed to send message", flags: MessageFlags.Ephemeral });
   }
 }

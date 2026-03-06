@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
+import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } from "discord.js";
 
 export const category = "Moderation";
 
@@ -17,6 +17,6 @@ export async function execute(i) {
     await i.guild.members.ban(user.id, { reason });
     await i.reply(`✅ Banned **${user.tag}**`);
   } catch {
-    await i.reply({ content: `❌ Unable to ban ${user.tag}`, ephemeral: true });
+    await i.reply({ content: `❌ Unable to ban ${user.tag}`, flags: MessageFlags.Ephemeral });
   }
 }

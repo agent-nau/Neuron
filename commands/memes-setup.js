@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits } from 'discord.js';
+import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits, MessageFlags } from 'discord.js';
 
 export const category = "Utility";
 const DEFAULT_SUBREDDIT = "memes";
@@ -80,7 +80,7 @@ export async function execute(interaction) {
   );
 
   await channel.send({ embeds: [setupEmbed], components: [row] });
-  await interaction.reply({ content: `✅ Meme channel setup in ${channel}`, ephemeral: true });
+  await interaction.reply({ content: `✅ Meme channel setup in ${channel}`, flags: MessageFlags.Ephemeral });
 }
 
 // Handle global interactions for buttons
