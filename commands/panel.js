@@ -33,13 +33,13 @@ export async function execute(interaction) {
 
   const panelEmbed = new EmbedBuilder()
     .setTitle('📋 Support Panel')
-    .setDescription('Choose an option below:\n- Tickets\n- Ratings\n- Suggestions\n- Reports')
+    .setDescription('**How to Use**\n• Use the dropdown below to pick a support form.\n• Once you select your choice within the dropdown, you will be presented with a form to fill out for our Moderators to review.\n• Report forms can only be submitted once every minute. Each appeal form has its own cooldown that only resets after your current appeal has been reviewed and processed.\n\n**Misuse Warning**\n• Before submitting a form, please review the form guidelines.\n• If you do not follow these guidelines, you are subject to having your form denied and/or being blacklisted from submitting forms.\n\nThank you for reading.\nIf the form selection does not work properly, please contact a Moderator.')
     .setColor(0x00AE86);
 
   const selectRow = new ActionRowBuilder().addComponents(
     new StringSelectMenuBuilder()
       .setCustomId('panel_select')
-      .setPlaceholder('Select an option...')
+      .setPlaceholder('Make a selection...')
       .addOptions([
         { label: 'Tickets', value: `tickets_${category.id}`, description: 'Create a support ticket' },
         { label: 'Ratings', value: 'ratings', description: 'Submit a rating & feedback' },
