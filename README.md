@@ -98,12 +98,12 @@
 
 <div align="center">
 
-| Command                                                          | Description                  | Usage                                              | Permission    |
-| :--------------------------------------------------------------- | :--------------------------- | :------------------------------------------------- | :------------ |
-| `/verify setup #channel`                                         | Create verification panel    | `/verify setup #verify`                            | Administrator |
-| `/panel setup #channel #suggestion_logs #report_logs [category]` | Setup unified support system | `/panel setup #support #suggest-logs #report-logs` | Administrator |
-| `/autojoin setup #channel`                                       | Configure welcome messages   | `/autojoin setup #welcome`                         | Administrator |
-| `/reactionrole setup`                                            | Create reaction role message | `/reactionrole setup`                              | Manage Roles  |
+| Command                                                             | Description                  | Usage                                                   | Permission    |
+| :------------------------------------------------------------------ | :--------------------------- | :------------------------------------------------------ | :------------ |
+| `/verify setup #channel`                                            | Create verification panel    | `/verify setup #verify`                                 | Administrator |
+| `/panel setup #panel #suggestions_public #suggestions_dev #reports` | Setup unified support system | `/panel setup #support #ideas #dev-review #report-logs` | Administrator |
+| `/autojoin setup #channel`                                          | Configure welcome messages   | `/autojoin setup #welcome`                              | Administrator |
+| `/reactionrole setup`                                               | Create reaction role message | `/reactionrole setup`                                   | Manage Roles  |
 
 </div>
 
