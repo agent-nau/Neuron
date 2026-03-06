@@ -51,12 +51,12 @@
 </td>
 <td width="25%" valign="top">
 
-### 🎫 **Ticketing**
+### 🎫 **Support Panel**
 
-- One-click ticket creation
-- Private channel generation
-- Support team pings
-- Archive & close functionality
+- Integrated Tickets, Suggestions, and Reports
+- Categorized ticketing system
+- Staff review workflow for ideas/issues
+- Automated DMs on review status
 
 </td>
 <td width="25%" valign="top">
@@ -69,16 +69,6 @@
 - Birthday scheduler (`/birthday`)
 - Random memes (`/meme-setup`)
 - Role management (`/addrole` `/removerole`)
-
-</td>
-<td width="20%" valign="top">
-
-### ⭐ **Feedback**
-
-- Anonymous/Public ratings
-- Persistent rating status
-- Support server logs
-- Verification modals
 
 </td>
 </tr>
@@ -108,14 +98,12 @@
 
 <div align="center">
 
-| Command                    | Description                  | Usage                      | Permission                          |
-| :------------------------- | :--------------------------- | :------------------------- | :---------------------------------- |
-| `/verify setup #channel`   | Create verification panel    | `/verify setup #verify`    | Administrator                       |
-| `/ticket setup #category`  | Setup ticket system          | `/ticket setup #tickets`   | Administrator                       |
-| `/autojoin setup #channel` | Configure welcome messages   | `/autojoin setup #welcome` | Administrator                       |
-| `/reactionrole setup`      | Create reaction role message | `/reactionrole setup`      | Manage Roles                        |
-| `/ratingsetup [channel]`   | Post rating panel (Support)  | `/ratingsetup`             | Administrator (Support Server Only) |
-| `/ratingchannel [channel]` | Set rating log (Support)     | `/ratingchannel #logs`     | Administrator (Support Server Only) |
+| Command                                                          | Description                  | Usage                                              | Permission    |
+| :--------------------------------------------------------------- | :--------------------------- | :------------------------------------------------- | :------------ |
+| `/verify setup #channel`                                         | Create verification panel    | `/verify setup #verify`                            | Administrator |
+| `/panel setup #channel #suggestion_logs #report_logs [category]` | Setup unified support system | `/panel setup #support #suggest-logs #report-logs` | Administrator |
+| `/autojoin setup #channel`                                       | Configure welcome messages   | `/autojoin setup #welcome`                         | Administrator |
+| `/reactionrole setup`                                            | Create reaction role message | `/reactionrole setup`                              | Manage Roles  |
 
 </div>
 
@@ -135,7 +123,7 @@
 | `/ping`                                          | Check bot latency and API response time                                          | `/ping`                                                   | —              |
 | `/invite`                                        | Get bot invite link for your server                                              | `/invite`                                                 | —              |
 | `/help`                                          | Display full help menu with all commands                                         | `/help`                                                   | —              |
-| `/meme-setup`                                    | Fetch random trending memes from Reddit (r/memes)                                | `/meme-setup`                                             | Administrator  |
+| `/meme-setup #channel`                           | Setup persistent meme channel with random memes                                  | `/meme-setup #memes`                                      | Administrator  |
 
 </div>
 
@@ -186,7 +174,6 @@ Native Fetch - Built-in HTTP requests (Node 18+)
 </b>
 
 ---
-
 
 <p align="center">
   <b>Distributed under the <a href="https://github.com/agent-nau/Neuron/blob/main-branch/LICENSE">NDBLA Licence 1.0</a></b>

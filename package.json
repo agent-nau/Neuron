@@ -22,9 +22,7 @@
     "express": "^5.1.0",
     "node-cron": "^4.2.1",
     "node-fetch": "^3.3.2",
-    "puter": "^1.0.0",
-    "quick.db": "^9.1.7",
-    "better-sqlite3": "^11.8.1"
+    "puter": "^1.0.0"
   },
   "engines": {
     "node": ">=16.0.0"

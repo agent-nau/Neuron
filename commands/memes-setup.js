@@ -59,63 +59,35 @@ async function fetchMeme() {
 }
 
 export const data = new SlashCommandBuilder()
-  .setName('memes-setup')
-  .setDescription('Meme management')
+  .setName('meme-setup')
+  .setDescription('Post a persistent meme panel in a channel')
   .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-  .addSubcommand(sub => 
-    sub.setName('get')
-      .setDescription('Get a random meme from r/memes'))
-  .addSubcommand(sub => 
-    sub.setName('setup')
-      .setDescription('Post a persistent meme panel in a channel')
-      .addChannelOption(o => o.setName('channel').setDescription('Channel to post the panel').setRequired(true)));
+  .addChannelOption(o => o.setName('channel').setDescription('Channel to post the panel').setRequired(true));
 
 export async function execute(interaction) {
-  const subcommand = interaction.options.getSubcommand();
+  const channel = interaction.options.getChannel('channel');
+  
+  const setupEmbed = new EmbedBuilder()
+    .setTitle('🎭 Meme Channel')
+    .setDescription('Click the button below to get a fresh meme from Reddit!')
+    .setColor(0xFF5700);
 
-  if (subcommand === 'get') {
-    await interaction.deferReply();
-    const memeData = await fetchMeme();
-    await interaction.editReply(memeData);
-  }
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('next_meme')
+      .setLabel('🎲 Get a Meme')
+      .setStyle(ButtonStyle.Primary)
+  );
 
-  if (subcommand === 'setup') {
-    const channel = interaction.options.getChannel('channel');
-    
-    const setupEmbed = new EmbedBuilder()
-      .setTitle('🎭 Meme Channel')
-      .setDescription('Click the button below to get a fresh meme from Reddit!')
-      .setColor(0xFF5700);
-
-    const row = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId('next_meme')
-        .setLabel('🎲 Get a Meme')
-        .setStyle(ButtonStyle.Primary)
-    );
-
-    await channel.send({ embeds: [setupEmbed], components: [row] });
-    await interaction.reply({ content: `✅ Meme channel setup in ${channel}`, ephemeral: true });
-  }
+  await channel.send({ embeds: [setupEmbed], components: [row] });
+  await interaction.reply({ content: `✅ Meme channel setup in ${channel}`, ephemeral: true });
 }
 
 // Handle global interactions for buttons
 export async function handleInteraction(interaction) {
   if (interaction.isButton() && interaction.customId === 'next_meme') {
-    // Optional: restrict to admin if you want, but usually users can click this
-    // If you want it admin-only, uncomment:
-    // if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
-    //   return interaction.reply({ content: '❌ Only admins can click this!', ephemeral: true });
-    // }
-
     await interaction.deferUpdate();
     const memeData = await fetchMeme();
-    
-    // If it was a setup button, we want to send it as a NEW message or edit?
-    // User said "setup meme channel button to send meme again"
-    // Usually, in a meme channel, you want to EDIT the message or SEND a new one?
-    // If we edit, it's a cleaner channel. If we send new, it's a history of memes.
-    // Let's EDIT the current message to show the new meme.
     await interaction.editReply(memeData);
   }
 }

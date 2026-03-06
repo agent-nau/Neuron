@@ -7,37 +7,38 @@ import {
   TextInputBuilder,
   TextInputStyle,
   ButtonBuilder,
-  ButtonStyle
+  ButtonStyle,
+  PermissionFlagsBits,
+  ChannelType
 } from 'discord.js';
-import { QuickDB } from 'quick.db';
-
-const db = new QuickDB();
 
 export const data = new SlashCommandBuilder()
   .setName('panel')
-  .setDescription('Ticket/Ratings/Suggestions/Reports panel system')
+  .setDescription('Setup the Support Panel (Tickets, Suggestions, Reports) [Stateless]')
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
   .addSubcommand(sub =>
     sub.setName('setup')
-      .setDescription('Post panel and configure log channels')
-      .addChannelOption(o => o.setName('channel').setDescription('Channel to post the panel').setRequired(true))
-      .addChannelOption(o => o.setName('category').setDescription('Category where tickets will be created').setRequired(true))
-      .addChannelOption(o => o.setName('rating_logs').setDescription('Channel for rating logs').setRequired(true))
-      .addChannelOption(o => o.setName('suggestion_logs').setDescription('Channel for suggestion logs').setRequired(true))
-      .addChannelOption(o => o.setName('report_logs').setDescription('Channel for report logs').setRequired(true))
+      .setDescription('Post the support panel')
+      .addChannelOption(o => o.setName('channel').setDescription('Channel to post the panel').setRequired(true).addChannelTypes(ChannelType.GuildText))
+      .addChannelOption(o => o.setName('suggestion_logs').setDescription('Channel for suggestions').setRequired(true).addChannelTypes(ChannelType.GuildText))
+      .addChannelOption(o => o.setName('report_logs').setDescription('Channel for reports').setRequired(true).addChannelTypes(ChannelType.GuildText))
+      .addChannelOption(o => o.setName('category').setDescription('Category for tickets (Defaults to current category)').addChannelTypes(ChannelType.GuildCategory))
   );
 
 export async function execute(interaction) {
   const channel = interaction.options.getChannel('channel');
-  const category = interaction.options.getChannel('category');
-  const ratingLogs = interaction.options.getChannel('rating_logs');
   const suggestionLogs = interaction.options.getChannel('suggestion_logs');
   const reportLogs = interaction.options.getChannel('report_logs');
+  
+  let category = interaction.options.getChannel('category');
+  if (!category) category = channel.parent;
 
-  await db.set(`guild_${interaction.guild.id}_config`, {
-    rating_logs: ratingLogs.id,
-    suggestion_logs: suggestionLogs.id,
-    report_logs: reportLogs.id
-  });
+  if (!category) {
+    return interaction.reply({ content: '❌ Could not auto-detect a category. Please specify one manually.', ephemeral: true });
+  }
+
+  // Encoding: type_suggestionLogId_reportLogId_categoryId
+  const baseValue = `${suggestionLogs.id}_${reportLogs.id}_${category.id}`;
 
   const panelEmbed = new EmbedBuilder()
     .setTitle('📋 Support Panel')
@@ -49,134 +50,67 @@ export async function execute(interaction) {
       .setCustomId('panel_select')
       .setPlaceholder('Make a selection...')
       .addOptions([
-        { label: 'Tickets', value: `tickets_${category.id}`, description: 'Create a support ticket' },
-        { label: 'Ratings', value: 'ratings', description: 'Submit a rating & feedback' },
-        { label: 'Suggestions', value: 'suggestions', description: 'Submit a suggestion' },
-        { label: 'Reports', value: 'reports', description: 'Report an issue' },
+        { label: 'Create Ticket', value: `tickets_${baseValue}`, description: 'Open a support ticket' },
+        { label: 'Submit Suggestion', value: `suggestions_${baseValue}`, description: 'Share your ideas' },
+        { label: 'Submit Report', value: `reports_${baseValue}`, description: 'Report an issue or user' },
       ])
   );
 
   await channel.send({ embeds: [panelEmbed], components: [selectRow] });
-  await interaction.reply({ content: `✅ Panel posted in ${channel}`, ephemeral: true });
+  
+  await interaction.reply({ 
+    content: `✅ Panel posted in ${channel}!\n**Settings (Encoded):**\nSuggestions: <#${suggestionLogs.id}>\nReports: <#${reportLogs.id}>\nTickets: <#${category.id}>`, 
+    ephemeral: true 
+  });
 }
 
-// Handle interactions
 export async function handleInteraction(interaction) {
+  // 1. SELECT MENU HANDLING
   if (interaction.isStringSelectMenu() && interaction.customId === 'panel_select') {
-    const choice = interaction.values[0];
+    const [type, suggLogId, repLogId, catId] = interaction.values[0].split('_');
 
-    // Tickets
-    if (choice.startsWith('tickets_')) {
-      const categoryId = choice.split('_')[1];
-      const guild = interaction.guild;
-
-      const ticketChannel = await guild.channels.create({
+    if (type === 'tickets') {
+      const ticketChannel = await interaction.guild.channels.create({
         name: `ticket-${interaction.user.username}`,
-        type: 0, // text channel
-        parent: categoryId,
+        type: ChannelType.GuildText,
+        parent: catId,
         permissionOverwrites: [
-          { id: guild.id, deny: ['ViewChannel'] },
+          { id: interaction.guild.id, deny: ['ViewChannel'] },
           { id: interaction.user.id, allow: ['ViewChannel', 'SendMessages'] }
         ]
       });
-
-      await interaction.reply({ content: `✅ Ticket created: ${ticketChannel}`, ephemeral: true });
+      return await interaction.reply({ content: `✅ Ticket created: ${ticketChannel}`, ephemeral: true });
     }
 
-    // Ratings modal
-    if (choice === 'ratings') {
+    if (type === 'suggestions') {
       const modal = new ModalBuilder()
-        .setCustomId('ratings_modal')
-        .setTitle('🌟 Submit Your Rating');
-
-      const ratingInput = new TextInputBuilder()
-        .setCustomId('rating_value')
-        .setLabel('Rating (1–5)')
-        .setStyle(TextInputStyle.Short)
-        .setRequired(true);
-
-      const commentInput = new TextInputBuilder()
-        .setCustomId('rating_comment')
-        .setLabel('Comments')
-        .setStyle(TextInputStyle.Paragraph);
-
-      const anonInput = new TextInputBuilder()
-        .setCustomId('rating_anon')
-        .setLabel('Anonymous? (Yes/No)')
-        .setStyle(TextInputStyle.Short)
-        .setRequired(true);
-
-      modal.addComponents(
-        new ActionRowBuilder().addComponents(ratingInput),
-        new ActionRowBuilder().addComponents(commentInput),
-        new ActionRowBuilder().addComponents(anonInput)
-      );
-
-      await interaction.showModal(modal);
-    }
-
-    // Suggestions modal
-    if (choice === 'suggestions') {
-      const modal = new ModalBuilder()
-        .setCustomId('suggestions_modal')
+        .setCustomId(`suggestions_modal_${suggLogId}`)
         .setTitle('💡 Submit a Suggestion');
-
-      const suggestionInput = new TextInputBuilder()
-        .setCustomId('suggestion_text')
-        .setLabel('Your suggestion')
-        .setStyle(TextInputStyle.Paragraph)
-        .setRequired(true);
-
-      modal.addComponents(new ActionRowBuilder().addComponents(suggestionInput));
-      await interaction.showModal(modal);
+      const input = new TextInputBuilder().setCustomId('text').setLabel('Your suggestion').setStyle(TextInputStyle.Paragraph).setRequired(true);
+      modal.addComponents(new ActionRowBuilder().addComponents(input));
+      return await interaction.showModal(modal);
     }
 
-    // Reports modal
-    if (choice === 'reports') {
+    if (type === 'reports') {
       const modal = new ModalBuilder()
-        .setCustomId('reports_modal')
+        .setCustomId(`reports_modal_${repLogId}`)
         .setTitle('🚨 Submit a Report');
-
-      const reportInput = new TextInputBuilder()
-        .setCustomId('report_text')
-        .setLabel('Describe the issue')
-        .setStyle(TextInputStyle.Paragraph)
-        .setRequired(true);
-
-      modal.addComponents(new ActionRowBuilder().addComponents(reportInput));
-      await interaction.showModal(modal);
+      const input = new TextInputBuilder().setCustomId('text').setLabel('Describe the issue').setStyle(TextInputStyle.Paragraph).setRequired(true);
+      modal.addComponents(new ActionRowBuilder().addComponents(input));
+      return await interaction.showModal(modal);
     }
   }
 
-  // Handle modal submissions
+  // 2. MODAL SUBMISSION
   if (interaction.isModalSubmit()) {
-    const config = await db.get(`guild_${interaction.guild.id}_config`);
+    if (interaction.customId.startsWith('suggestions_modal_')) {
+      const logChannelId = interaction.customId.split('_')[2];
+      const suggestion = interaction.fields.getTextInputValue('text');
+      const logChannel = interaction.guild.channels.cache.get(logChannelId);
 
-    if (interaction.customId === 'ratings_modal') {
-      const rating = interaction.fields.getTextInputValue('rating_value');
-      const comment = interaction.fields.getTextInputValue('rating_comment') || 'No comment';
-      const anon = interaction.fields.getTextInputValue('rating_anon').toLowerCase() === 'yes';
+      if (!logChannel) return interaction.reply({ content: '❌ Log channel not found! The panel might be outdated.', ephemeral: true });
 
-      const logEmbed = new EmbedBuilder()
-        .setTitle('🌟 New Rating')
-        .addFields(
-          { name: 'User', value: anon ? 'Anonymous' : `<@${interaction.user.id}>` },
-          { name: 'Rating', value: `${rating}/5` },
-          { name: 'Comment', value: comment }
-        )
-        .setColor(0x00FF00)
-        .setTimestamp();
-
-      const logChannel = interaction.guild.channels.cache.get(config?.rating_logs);
-      if (logChannel) await logChannel.send({ embeds: [logEmbed] });
-
-      await interaction.reply({ content: '✅ Rating submitted!', ephemeral: true });
-    }
-
-    if (interaction.customId === 'suggestions_modal') {
-      const suggestion = interaction.fields.getTextInputValue('suggestion_text');
-
-      const logEmbed = new EmbedBuilder()
+      const embed = new EmbedBuilder()
         .setTitle('💡 New Suggestion')
         .setAuthor({ name: interaction.user.tag, iconURL: interaction.user.displayAvatarURL() })
         .setDescription(suggestion)
@@ -189,16 +123,18 @@ export async function handleInteraction(interaction) {
         new ButtonBuilder().setCustomId(`deny_suggestion_${interaction.user.id}`).setLabel('Deny').setStyle(ButtonStyle.Danger)
       );
 
-      const logChannel = interaction.guild.channels.cache.get(config?.suggestion_logs);
-      if (logChannel) await logChannel.send({ embeds: [logEmbed], components: [row] });
-
-      await interaction.reply({ content: '💡 Suggestion submitted!', ephemeral: true });
+      await logChannel.send({ embeds: [embed], components: [row] });
+      return await interaction.reply({ content: '✅ Suggestion submitted!', ephemeral: true });
     }
 
-    if (interaction.customId === 'reports_modal') {
-      const report = interaction.fields.getTextInputValue('report_text');
+    if (interaction.customId.startsWith('reports_modal_')) {
+      const logChannelId = interaction.customId.split('_')[2];
+      const report = interaction.fields.getTextInputValue('text');
+      const logChannel = interaction.guild.channels.cache.get(logChannelId);
 
-      const logEmbed = new EmbedBuilder()
+      if (!logChannel) return interaction.reply({ content: '❌ Log channel not found! The panel might be outdated.', ephemeral: true });
+
+      const embed = new EmbedBuilder()
         .setTitle('🚨 New Report')
         .setAuthor({ name: interaction.user.tag, iconURL: interaction.user.displayAvatarURL() })
         .setDescription(report)
@@ -211,59 +147,49 @@ export async function handleInteraction(interaction) {
         new ButtonBuilder().setCustomId(`unsolved_report_${interaction.user.id}`).setLabel('Mark Unsolved').setStyle(ButtonStyle.Danger)
       );
 
-      const logChannel = interaction.guild.channels.cache.get(config?.report_logs);
-      if (logChannel) await logChannel.send({ embeds: [logEmbed], components: [row] });
-
-      await interaction.reply({ content: '🚨 Report submitted!', ephemeral: true });
+      await logChannel.send({ embeds: [embed], components: [row] });
+      return await interaction.reply({ content: '✅ Report submitted!', ephemeral: true });
     }
 
-    // Dev response modals
     if (interaction.customId.startsWith('dev_comment_modal_')) {
       const [,,, type, action, userId] = interaction.customId.split('_');
       const comment = interaction.fields.getTextInputValue('dev_comment');
       const user = await interaction.client.users.fetch(userId).catch(() => null);
 
       const status = action === 'approve' || action === 'solve' ? '✅ accepted/solved' : '❌ denied/unsolved';
+      const color = action === 'approve' || action === 'solve' ? 0x00FF00 : 0xFF0000;
       
       const responseEmbed = new EmbedBuilder()
         .setTitle(`Update on your ${type}`)
         .setDescription(`Your ${type} has been **${status}**.`)
         .addFields({ name: 'Developer Comment', value: comment })
-        .setColor(action === 'approve' || action === 'solve' ? 0x00FF00 : 0xFF0000)
+        .setColor(color)
         .setTimestamp();
 
-      if (user) {
-        await user.send({ embeds: [responseEmbed] }).catch(() => {
-          interaction.channel.send(`⚠️ Could not DM <@${userId}>.`);
-        });
-      }
+      if (user) await user.send({ embeds: [responseEmbed] }).catch(() => {});
 
-      // Update the log message
       const oldEmbed = EmbedBuilder.from(interaction.message.embeds[0]);
       oldEmbed.addFields({ name: `Dev Decision: ${action.toUpperCase()}`, value: comment });
-      oldEmbed.setColor(action === 'approve' || action === 'solve' ? 0x00FF00 : 0xFF0000);
+      oldEmbed.setColor(color);
 
-      await interaction.update({ embeds: [oldEmbed], components: [] });
+      return await interaction.update({ embeds: [oldEmbed], components: [] });
     }
   }
 
-  // Handle Button Interactions (Dev review)
+  // 3. BUTTONS
   if (interaction.isButton()) {
-    const [action, type, userId] = interaction.customId.split('_');
-    
+    const parts = interaction.customId.split('_');
+    if (parts.length < 3) return;
+
+    const [action, type, userId] = parts;
     if (['approve', 'deny', 'solve', 'unsolved'].includes(action)) {
       const modal = new ModalBuilder()
         .setCustomId(`dev_comment_modal_${type}_${action}_${userId}`)
         .setTitle('Add Developer Comment');
 
-      const commentInput = new TextInputBuilder()
-        .setCustomId('dev_comment')
-        .setLabel('Your comment to the user')
-        .setStyle(TextInputStyle.Paragraph)
-        .setRequired(true);
-
-      modal.addComponents(new ActionRowBuilder().addComponents(commentInput));
-      await interaction.showModal(modal);
+      const input = new TextInputBuilder().setCustomId('dev_comment').setLabel('Your comment to the user').setStyle(TextInputStyle.Paragraph).setRequired(true);
+      modal.addComponents(new ActionRowBuilder().addComponents(input));
+      return await interaction.showModal(modal);
     }
   }
 }
